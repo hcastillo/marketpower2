@@ -7,25 +7,40 @@
 #
 # author: hector@bith.net
 # date:   04/2023, 09/2025, 03/2026
+import random
+
 import numpy as np
 import os
 import sys
 import pandas as pd
+import logging
+import networkx as nx
+import matplotlib.pyplot as plt
+import json
+import warnings
+import lxml
 
 
 class Config:
     """
         Configuration parameters for the interbank network
     """
-    T: int = 1000  # time (1000)
-    N: int = 50  # number of banks (50)
+    T: int = 10  # time (1000)
+    N: int = 10 # number of banks (50)
 
     reserves: float = 0.02
 
-    # seed applied for random values (set during initialize)
-    seed: int = 26462
+    # probability of attachment of lender change
+    p = 0.8
 
-    # shocks parameters: mi=0.7 omega=0.55 for perfect balance
+    # screening costs:
+    m = 0.015
+
+    # seed applied for random values (set during initialize)
+    seed: int = 5
+
+    # shocks parameters: mi=0.7 omega=0.6 for perfect balance
+    # less omega, more negative is the shock
     mu: float = 0.7  # mi µ
     omega: float = 0.6  # omega ω
 
@@ -47,16 +62,12 @@ class Config:
     # L + C + R = D + E
     # but R = 0.02*D and C_i0= 30-2.7=27.3 and R=2.7
     #L_i0: float = 120  # long term assets
-    C_i0: float = 70  # capital BEFORE RESERVES ESTIMATION, after it will be 27.3
+    C_i0: float = 5  # capital BEFORE RESERVES ESTIMATION, after it will be 27.3
+    L_i0: float = 5
     # R_i0=2.7
-    D_i0: float = 40  # deposits
-    E_i0: float = 30  # equity
+    D_i0: float = 9  # deposits
+    E_i0: float = 1  # equity
     r_i0: float = 0.02  # initial rate
-
-    # if enabled and != [] the values of t in the array (for instance [150,350]) will generate
-    # a graph with the relations of the firms. If * all the instants will generate a graph, and also an animated gif
-    # with the results
-    GRAPHS_MOMENTS = []
 
     # what elements are in the results.csv file, and also which are plot.
     # 1 if also plot, 0 not to plot:
@@ -75,6 +86,107 @@ class Config:
                              'P': 'prob_change_lender',
                              'B': 'bad_debt'}
 
+
+class Log:
+    """
+    The class acts as a logger and helpers to represent the data and evol from the Model.
+    """
+    logger = logging.getLogger('interbank')
+    modules = []
+    model = None
+    logLevel = 'DEBUG'
+    progress_bar = None
+
+    def __init__(self, its_model):
+        self.model = its_model
+
+    def do_progress_bar(self, message, maximum):
+        from progress.bar import Bar
+        self.progress_bar = Bar(message, max=maximum)
+
+    @staticmethod
+    def format_number(number):
+        result = '{}'.format(number)
+        while len(result) > 5 and result[-1] == '0':
+            result = result[:-1]
+        while len(result) > 5 and result.find('.') > 0:
+            result = result[:-1]
+        while len(result) < 5:
+            result = ' '+result
+        return result
+
+    def debug_bank(self, i):
+        format_value = self.model.bank_str
+        if i<self.model.config.N:
+            result =f"bank#{i} C={format_value(i,"C")} L={format_value(i,"L")} R={format_value(i,"R")} |" +\
+                    f" D={format_value(i,"D")} E={format_value(i,"E")} "
+            if self.model.incrD[i]>0:
+                result +=(f" d={format_value(i,"d")} "
+                          f"{'lender=' + str(self.model.lenders[i]) if self.model.lenders[i] >= 0 else ''}")
+                if self.model.prob_bankruptcy[i]>=0:
+                    result +=f" p={format_value(i,"prob_bankruptcy")} "
+                if self.model.leverage[i]>=0:
+                    result +=f" λ={format_value(i,"leverage")} "
+                if self.model.haircut[i]>=0:
+                    result +=f" h={format_value(i,"haircut")} "
+                if self.model.capacity[i]>=0:
+                    result +=f" c={format_value(i,"capacity")} "
+                if self.model.interest_rate[i]>=0:
+                    result +=f" r={format_value(i,"interest_rate")} "
+            else:
+                result +=f" s={format_value(i,"s")}"
+                if self.model.psi[i]>=0:
+                    result += f" ψ={format_value(i,"psi")}"
+            return result
+        else:
+            return ""
+
+    def debug_banks(self):
+        for i in range(self.model.config.N):
+            self.debug("------", self.debug_bank(i))
+
+    @staticmethod
+    def get_level(option):
+        try:
+            return getattr(logging, option.upper())
+        except AttributeError:
+            logging.error(" '--log' must contain a valid logging level and {} is not.".format(option.upper()))
+            sys.exit(-1)
+
+    def debug(self, module, text):
+        if self.modules == [] or module in self.modules:
+            if isinstance(text, list):
+                for textline in text:
+                    self.debug(module, textline)
+            elif text:
+                self.logger.debug('t={}/{} {}'.format(self.model.t, module, text))
+
+    def info(self, module, text):
+        if self.modules == [] or module in self.modules:
+            if text:
+                self.logger.info(' t={}/{} {}'.format(self.model.t, module, text))
+
+    def error(self, module, text):
+        if text:
+            self.logger.error('t={}/{} {}'.format(self.model.t, module, text))
+
+    def define_log(self, log: str, logfile: str = '', modules: str = ''):
+        self.modules = modules.split(',') if modules else []
+        formatter = logging.Formatter('%(levelname)s-' + '- %(message)s')
+        self.logLevel = Log.get_level(log.upper())
+        self.logger.setLevel(self.logLevel)
+        if logfile:
+            if not os.path.dirname(logfile):
+                logfile = '{}/{}'.format(self.model.statistics.OUTPUT_DIRECTORY, logfile)
+            fh = logging.FileHandler(logfile, 'a', 'utf-8')
+            fh.setLevel(self.logLevel)
+            fh.setFormatter(formatter)
+            self.logger.addHandler(fh)
+        else:
+            ch = logging.StreamHandler()
+            ch.setLevel(self.logLevel)
+            ch.setFormatter(formatter)
+            self.logger.addHandler(ch)
 
 class Statistics:
     def __init__(self, in_model):
@@ -129,16 +241,6 @@ class Statistics:
         self.leverage = np.zeros(self.model.config.T, dtype=float)
         self.systemic_leverage = np.zeros(self.model.config.T, dtype=float)
         self.profits = np.zeros(self.model.config.T, dtype=float)
-        if isinstance(self.model.config.lender_change, interbank_lenderchange.Boltzmann):
-            self.fitness = np.zeros(self.model.config.T, dtype=float)
-            self.policy = np.zeros(self.model.config.T, dtype=float)
-            self.P = np.zeros(self.model.config.T, dtype=float)
-            self.P_max = np.zeros(self.model.config.T, dtype=float)
-            self.P_min = np.zeros(self.model.config.T, dtype=float)
-        else:
-            self.P = None
-            self.P_max = None
-            self.P_min = None
         self.B = np.zeros(self.model.config.T, dtype=float)
         self.sum_loans = np.zeros(self.model.config.T, dtype=float)
         self.num_loans = np.zeros(self.model.config.T, dtype=int)
@@ -148,16 +250,12 @@ class Statistics:
         self.bankruptcy = np.zeros(self.model.config.T, dtype=int)
         self.bankruptcy_rationed = np.zeros(self.model.config.T, dtype=int)
         self.num_of_rationed = np.zeros(self.model.config.T, dtype=int)
-        if self.model.config.psi_endogenous:
-            self.psi = np.zeros(self.model.config.T, dtype=float)
-            self.psi_effective = np.zeros(self.model.config.T, dtype=float)
+        self.psi = np.zeros(self.model.config.T, dtype=float)
+        self.psi_effective = np.zeros(self.model.config.T, dtype=float)
         self.grade_avg = np.zeros(self.model.config.T, dtype=float)
         self.communities = np.zeros(self.model.config.T, dtype=int)
         self.communities_not_alone = np.zeros(self.model.config.T, dtype=int)
         self.gcs = np.zeros(self.model.config.T, dtype=int)
-        self.detailed_banks_results = pd.DataFrame()
-        if self.statistics_stats_market:
-            self.statistics_stats_market.reset()
 
     def compute_credit_channels_and_best_lender(self):
         lenders = {}
@@ -488,15 +586,58 @@ class Statistics:
         if self.statistics_stats_market:
             self.statistics_stats_market.determine_cross_correlation()
 
+
     def export_data(self, export_datafile=None, export_description=None, generate_plots=True):
         if export_datafile:
             self.save_data(export_datafile, export_description)
             if generate_plots:
                 self.get_plots(export_datafile)
-        if Utils.is_notebook() or Utils.is_spyder():
-            self.get_plots(None)
         if self.statistics_stats_market:
             self.statistics_stats_market.export_data(export_datafile, export_description, generate_plots)
+
+        def draw(original_graph, new_guru_look_for=False, title=None, show=False):
+            """ Draws the graph using a spring layout that reuses the previous one layout, to show similar position for
+                the same ids of nodes along time. If the graph is undirected (Barabasi) then no """
+            graph_to_draw = original_graph.copy()
+            plt.clf()
+            if title:
+                plt.title(title)
+            guru = None
+            if self.node_positions is None:
+                self.node_positions = nx.spring_layout(graph_to_draw, pos=self.node_positions)
+            if not hasattr(original_graph, "type") and original_graph.is_directed():
+                # guru should not have out edges, and surely by random graphs it has:
+                guru, _ = self.find_guru(graph_to_draw)
+                for (i, j) in list(graph_to_draw.out_edges(guru)):
+                    graph_to_draw.remove_edge(i, j)
+            if hasattr(original_graph, "type") and original_graph.type == "barabasi_albert":
+                graph_to_draw, guru = self.get_graph_from_guru(graph_to_draw.to_undirected())
+            if hasattr(original_graph, "type") and original_graph.type == "erdos_renyi" and graph_to_draw.is_directed():
+                for node in list(graph_to_draw.nodes()):
+                    if not graph_to_draw.edges(node) and not graph_to_draw.in_edges(node):
+                        graph_to_draw.remove_node(node)
+                new_guru_look_for = True
+            if not self.node_colors or new_guru_look_for:
+                self.node_colors = []
+                guru, guru_node_edges = self.find_guru(graph_to_draw)
+                for node in graph_to_draw.nodes():
+                    if node == guru:
+                        self.node_colors.append('darkorange')
+                    elif self.__len_edges(graph_to_draw, node) == 0:
+                        self.node_colors.append('lightblue')
+                    elif self.__len_edges(graph_to_draw, node) == 1:
+                        self.node_colors.append('steelblue')
+                    else:
+                        self.node_colors.append('royalblue')
+            if hasattr(original_graph, "type") and original_graph.type == "barabasi_pref":
+                nx.draw(graph_to_draw, pos=self.node_positions, node_color=self.node_colors, with_labels=True)
+            else:
+                nx.draw(graph_to_draw, pos=self.node_positions, node_color=self.node_colors, arrowstyle='->',
+                        arrows=True, with_labels=True)
+
+            if show:
+                plt.show()
+            return guru
 
     def get_graph(self, t):
         """
@@ -509,7 +650,7 @@ class Statistics:
             for bank in self.model.banks:
                 if bank.lender is not None:
                     self.graphs[t].add_edge(bank.lender, bank.id)
-            lc.draw(self.graphs[t], new_guru_look_for=True, title='t={}'.format(t))
+            self.draw(self.graphs[t], new_guru_look_for=True, title='t={}'.format(t))
             if Utils.is_spyder():
                 plt.show()
                 filename = None
@@ -931,45 +1072,396 @@ class Statistics:
                          'Time (best lender={} at t=[{}..{}])'.format(
                              final_best_lender, time_init, time_init + max_duration), 'Best Lender')
 
+class GraphStatistics:
+    @staticmethod
+    def giant_component_size(graph):
+        """weakly connected componentes of the directed graph using Tarjan's algorithm:
+           https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm"""
+        if graph.is_directed():
+            return nx.average_clustering(graph)
+        else:
+            return len(max(nx.connected_components(graph), key=len))
+
+    @staticmethod
+    def get_all_credit_channels(graph):
+        return graph.number_of_edges()
+
+    @staticmethod
+    def avg_clustering_coef(graph):
+        """clustering coefficient 0..1, 1 for totally connected graphs, and 0 for totally isolated
+           if ~0 then a small world"""
+        try:
+            return nx.average_clustering(graph, count_zeros=True)
+        except ZeroDivisionError:
+            return 0
+
+    @staticmethod
+    def communities(graph):
+        """Communities using greedy modularity maximization"""
+        return list(nx.weakly_connected_components(graph if graph.is_directed() else graph.to_directed()))
+
+    @staticmethod
+    def grade_avg(graph):
+        communities = GraphStatistics.communities(graph)
+        total = 0
+        for community in communities:
+            total += len(community)
+        return total / len(communities)
+
+    @staticmethod
+    def communities_not_alone(graph):
+        """Number of communities that are not formed only with an isolated node"""
+        total = 0
+        for community in GraphStatistics.communities(graph):
+            total += len(community) > 1
+        return total
+
+    @staticmethod
+    def describe(graph, interact=False):
+        if isinstance(graph, str):
+            graph_name = graph
+            try:
+                graph = load_graph_json(graph_name)
+            except FileNotFoundError:
+                print("json file does not exist: %s" % graph)
+                sys.exit(0)
+            except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
+                print("json file does not contain a valid graph: %s" % graph)
+                sys.exit(0)
+        else:
+            graph_name = '?'
+        communities = GraphStatistics.communities(graph)
+        string_result = f"giant={GraphStatistics.giant_component_size(graph)} " + \
+                        f" comm_not_alone={GraphStatistics.communities_not_alone(graph)}" + \
+                        f" comm={len(communities)}" + \
+                        f" gcs={GraphStatistics.giant_component_size(graph)}"
+        if interact:
+            import code
+            print(string_result)
+            print(f"grade_avg={GraphStatistics.grade_avg(graph)}")
+            print("communities=", list(GraphStatistics.communities(graph)))
+            print(f"\n{graph_name} loaded into 'graph'\n")
+            code.interact(local=locals())
+            sys.exit(0)
+        else:
+            return string_result
+
+class LenderChange:
+    SAVE_THE_DIFFERENT_GRAPH_OF_EACH_STEP = True
+    GRAPH_NAME = "erdos_renyi"
+    
+    def __init__(self, model):
+        self.p = model.config.p
+        self.model = model
+        self.node_positions = None
+        self.node_colors = None
+
+    def __len_edges(self, graph, node):
+        if hasattr(graph, "in_edges"):
+            return len(graph.in_edges(node))
+        else:
+            return len(graph.edges(node))
+
+    def find_guru(self, graph):
+        """It returns the guru ID and also a color_map with red for the guru, lightblue if weight<max/2 and blue others """
+        guru_node = None
+        guru_node_edges = 0
+        for node in graph.nodes():
+            edges_node = self.__len_edges(graph, node)
+            if guru_node_edges < edges_node:
+                guru_node_edges = edges_node
+                guru_node = node
+        return guru_node, guru_node_edges
+    
+    def __str__(self):
+        return f"erdos_renyi p={self.p}"
+
+    def __get_graph_from_guru(self, input_graph, output_graph, current_node, previous_node):
+        """ It generates a new graph starting from the guru"""
+        if self.__len_edges(input_graph, current_node) > 1:
+            for (_, destination) in input_graph.edges(current_node):
+                if destination != previous_node:
+                    self.__get_graph_from_guru(input_graph, output_graph, destination, current_node)
+        if previous_node is not None:
+            output_graph.add_edge(current_node, previous_node)
+            
+    def get_graph_from_guru(self, input_graph):
+        guru, _ = self.find_guru(input_graph)
+        output_graph = nx.DiGraph()
+        self.__get_graph_from_guru(input_graph, output_graph, guru, None)
+        return output_graph, guru
+    
+    def draw(self, original_graph, new_guru_look_for=False, title=None, show=False):
+        """ Draws the graph using a spring layout that reuses the previous one layout, to show similar position for
+            the same ids of nodes along time. If the graph is undirected (Barabasi) then no """
+        graph_to_draw = original_graph.copy()
+        plt.clf()
+        if title:
+            plt.title(title)
+        # if not self.node_positions:
+        guru = None
+        if self.node_positions is None:
+            self.node_positions = nx.spring_layout(graph_to_draw, pos=self.node_positions)
+        if not hasattr(original_graph, "type") and original_graph.is_directed():
+            # guru should not have out edges, and surely by random graphs it has:
+            guru, _ = self.find_guru(graph_to_draw)
+            for (i, j) in list(graph_to_draw.out_edges(guru)):
+                graph_to_draw.remove_edge(i, j)
+        if hasattr(original_graph, "type") and original_graph.type == "barabasi_albert":
+            graph_to_draw, guru = self.get_graph_from_guru(graph_to_draw.to_undirected())
+        if hasattr(original_graph, "type") and original_graph.type == "erdos_renyi" and graph_to_draw.is_directed():
+            for node in list(graph_to_draw.nodes()):
+                if not graph_to_draw.edges(node) and not graph_to_draw.in_edges(node):
+                    graph_to_draw.remove_node(node)
+            new_guru_look_for = True
+        if not self.node_colors or new_guru_look_for:
+            self.node_colors = []
+            guru, guru_node_edges = self.find_guru(graph_to_draw)
+            for node in graph_to_draw.nodes():
+                if node == guru:
+                    self.node_colors.append('darkorange')
+                elif self.__len_edges(graph_to_draw, node) == 0:
+                    self.node_colors.append('lightblue')
+                elif self.__len_edges(graph_to_draw, node) == 1:
+                    self.node_colors.append('steelblue')
+                else:
+                    self.node_colors.append('royalblue')
+        if hasattr(original_graph, "type") and original_graph.type == "barabasi_pref":
+            nx.draw(graph_to_draw, pos=self.node_positions, node_color=self.node_colors, with_labels=True)
+        else:
+            nx.draw(graph_to_draw, pos=self.node_positions, node_color=self.node_colors, arrowstyle='->',
+                    arrows=True, with_labels=True)
+        if show:
+            plt.show()
+        return guru
+
+    def save_graph_png(self, graph, description, filename, add_info=False):
+        if add_info:
+            if not description:
+                description = ""
+            description += " " + GraphStatistics.describe(graph)
+
+        guru = self.draw(graph, new_guru_look_for=True, title=description)
+        plt.rcParams.update({'font.size': 6})
+        plt.rcParams.update(plt.rcParamsDefault)
+        warnings.filterwarnings("ignore", category=UserWarning)
+        plt.savefig(filename)
+        plt.close('all')
+        return guru
+
+    def save_graph_json(self, graph, filename):
+        if graph:
+            graph_json = nx.node_link_data(graph, edges="links")
+            with open(filename, 'w') as f:
+                json.dump(graph_json, f)
+
+    def generate_banks_graph(self):
+        result = nx.erdos_renyi_graph(n=self.model.config.N, p=self.model.config.p)
+        return result, f"erdos_renyi p={self.model.config.p:5.3} {GraphStatistics.describe(result)}"
+
+    #TODO: quitar self.model
+    # quitar export_datafile
+    def setup_links(self, save_graph=True):
+        """ It creates a Erdos Renyi graph with p defined in parameter['p']. No changes in relationships before end"""
+        self.banks_graph, description = self.generate_banks_graph()
+        self.banks_graph.type = self.GRAPH_NAME
+
+        if self.model.export_datafile and save_graph:
+             filename_for_file = f"_{self.GRAPH_NAME}"
+             if self.SAVE_THE_DIFFERENT_GRAPH_OF_EACH_STEP:
+                 filename_for_file += f"_{self.model.t}"
+             destination_file_json = self.model.statistics.get_export_path(self.model.export_datafile,
+                                                                           f"{filename_for_file}.json")
+             if not os.path.isfile(destination_file_json):
+                 self.save_graph_json(self.banks_graph, destination_file_json)
+                 self.save_graph_png(self.banks_graph, description, destination_file_json.replace('.json','.png'))
+
+        self.model.log.debug("links ", f"{self.GRAPH_NAME} (x,y)=x could lends to y: "+str(self.banks_graph.edges()) if self.banks_graph.edges() else "no edges in graph")
+        for i in range(self.model.config.N):
+            if self.model.incrD[i]<0:
+                possible_lenders = []
+                for (_, j) in self.banks_graph.edges(i):
+                    if self.model.incrD[j] > 0:
+                        possible_lenders.append(j)
+                if possible_lenders:
+                    self.model.lenders[i] = random.choice(possible_lenders)
+                else:
+                    self.model.lenders[i] = -1
+            else:
+                # si es lender, no hay lender:
+                self.model.lenders[i] = -1
+        self.model.log.debug("links ", "lenders (-1=None): "+str(self.model.lenders))
+        return self.banks_graph
+
+    def determine_current_communities(self):
+        return len(GraphStatistics.communities(self.banks_graph))
+
+    def determine_current_communities_not_alone(self):
+        return GraphStatistics.communities_not_alone(self.banks_graph)
+
+    def determine_current_graph_gcs(self):
+        return GraphStatistics.giant_component_size(self.banks_graph)
+
+    def determine_current_graph_grade_avg(self):
+        return GraphStatistics.grade_avg(self.banks_graph)
+
+
 class Model:
+    export_datafile = None
+
     def __init__(self):
-        self.banks_C = np.zeros(Config.T, dtype=float)
-        self.banks_D = np.zeros(Config.T, dtype=float)
-        self.banks_E = np.zeros(Config.T, dtype=float)
-        self.banks_R = np.zeros(Config.T, dtype=float)
+        self.t = 0
+        self.C = np.zeros(Config.N, dtype=float)
+        self.D = np.zeros(Config.N, dtype=float)
+        self.incrD = np.zeros(Config.N, dtype=float)
+        self.E = np.zeros(Config.N, dtype=float)
+        self.L = np.zeros(Config.N, dtype=float)
+        self.R = np.zeros(Config.N, dtype=float)
+        self.s = np.zeros(Config.N, dtype=float)
+        self.d = np.zeros(Config.N, dtype=float)
+        self.lenders = np.zeros(Config.N, dtype=int)
+        self.prob_bankruptcy = np.zeros(Config.N, dtype=float)
+        self.leverage = np.zeros(Config.N, dtype=float)
+        self.haircut = np.zeros(Config.N, dtype=float)
+        self.capacity = np.zeros(Config.N, dtype=float)
+        self.interest_rate = np.zeros(Config.N, dtype=float)
+        self.psi = np.zeros(Config.N, dtype=float)
         self.config = Config()
+        self.lenderchange = LenderChange(self)
         self.stats = Statistics(self)
+        self.log = Log(self)
+        
+    def bank(self, i, attr):
+        matrix = getattr(self, attr)
+        return matrix[i]
+
+    def bank_str(self, i, attr):
+        matrix = getattr(self, attr)
+        return Log.format_number(matrix[i])
 
     def initialize_model(self):
-        for i in range(Config.T):
-            self.banks_C[i] = self.config.C_i0
-            self.banks_D[i] = self.config.D_i0
-            self.banks_E[i] = self.config.E_i0
-            self.banks_R[i] = self.config.r_i0 * self.banks_D[i]
-            self.banks_C[i] = self.banks_C[i] - self.banks_R[i]
-
-    def print_bank(self, i):
-        return (f"bank#{i} C={self.banks_C[i]} R={self.banks_R[i]} |"
-                f" D={self.banks_D[i]} E={self.banks_E[i]}")
-
+        np.random.seed(self.config.seed)
+        random.seed(self.config.seed)
+        for i in range(self.config.N):
+            self.C[i] = self.config.C_i0
+            self.L[i] = self.config.L_i0
+            self.D[i] = self.config.D_i0
+            self.E[i] = self.config.E_i0
+            self.R[i] = self.config.r_i0 * self.D[i]
+            self.C[i] = self.C[i] - self.R[i]
 
     def setup_links(self):
-        pass
-
+        self.lenderchange.setup_links(save_graph=False)
 
     def shock1(self):
-        pass
+        rand_values = np.random.rand(Config.N)
+        shock = self.config.mu + self.config.omega * rand_values #  * ([10]*self.config.N)
+        newD = self.D * shock
+        self.incrD = newD - self.D
+        newR = self.config.reserves * newD
+        self.incrR = newR - self.R
+        self.D = newD
 
+        #TODO esto sería equivalente a lo posterior:
+        #self.banks_C = np.where(self.banks_incrD>0, self.banks_C + self.banks_incrD - self.banks_incrR,
+        #                        self.banks_D += self.banks_incrR)
+        ##self.C += self.incrD - self.incrR
+        # y ahora si C es <0, con una mácara np.where, sacar el dinero que les falta
+        for i in range(Config.N):
+            if self.incrD[i] >= 0:
+                self.C[i] += self.incrD[i] - self.incrR[i]
+                self.s[i] = self.C[i]
+                self.d[i] = 0
+                if self.incrD[i] > 0:
+                    self.log.debug("shock1", '{} wins ΔD={:.4f}'.format(i, self.incrD[i]))
+                else:
+                    self.log.debug("shock1", '{} has no shock'.format(i))
+            else:
+                self.s[i] = 0
+                if self.incrD[i] - self.incrR[i] + self.C[i] >= 0:
+                    self.d[i] = 0
+                    self.C[i] += self.incrD[i] - self.incrR[i]
+                    self.log.debug("shock1", '{} loses ΔD={:.4f}, covered by capital'.
+                                   format(i, self.incrD[i]))
+                else:
+                    self.d[i] = abs(self.incrD[i] - self.incrR[i] + self.C[i])
+                    self.C[i] = 0
+                    self.log.debug("shock1", '{} loses ΔD={:.4f} has C={:.4f} and needs {:.4f}'.format(
+                        i, self.incrD[i], self.C[i], self.d[i]))
+                    self.C[i] = 0
+
+    def do_interest_rate(self):
+        # 1. estimate probability of bankruptcy:
+        #TODO se podria calcular la prob de bankruptcy para cada borrower distinto
+        #  contando únicamente sus posibles lenders y así sería más heterogéneo
+        max_e=0
+        for i in range(self.config.N):
+            if self.incrD[i]>0:
+                if self.E[i]>max_e:
+                    max_e=self.E[i]
+        for i in range(self.config.N):
+            if self.incrD[i]<0:
+                self.prob_bankruptcy[i] = self.E[i] / max_e
+            else:
+                self.prob_bankruptcy[i] = -1.0
+        # 2. leverage:
+        max_leverage = 0
+        for i in range(self.config.N):
+            if self.incrD[i]<0:
+                self.leverage[i] = self.d[i] / self.E[i]
+                if self.leverage[i] > max_leverage:
+                    max_leverage=self.leverage[i]
+            else:
+                self.leverage[i] = -1.0
+        # 3. haircut:
+        for i in range(self.config.N):
+            if self.incrD[i]<0 and max_leverage:
+                self.haircut[i] = self.leverage[i] / max_leverage
+            else:
+                self.haircut[i] = -1
+        # 4. capacity:
+        for i in range(self.config.N):
+            if self.incrD[i]<0 and max_leverage:
+                self.capacity[i] = (1 - self.haircut[i]) * self.d[i]
+            else:
+                self.capacity[i] = -1
+
+        # 5. psi (market power of lenders):
+        max_e_lenders = 0
+        for i in range(self.config.N):
+            if self.E[i]>max_e_lenders:
+                max_e_lenders = self.E[i]
+        for i in range(self.config.N):
+            if self.incrD[i]>=0:
+                self.psi[i] = self.E[i] / max_e_lenders
+            else:
+                self.psi[i] = -1
+
+        # 6. interest_rate, for borrowers with its lender:
+        for i in range(self.config.N):
+            if self.d[i]>0 and self.lenders[i]>=0:
+                psi = self.psi[self.lenders[i]]
+                if psi==1:
+                    psi=0.99
+                self.interest_rate[i] = self.config.m / (self.prob_bankruptcy[i] * (1 - psi))
+            else:
+                self.interest_rate[i] = -1
 
     def run(self):
         self.initialize_model()
-        for t in range(Config.T):
-            print(f"t={t}")
+        self.log.debug_banks()
+        for t in range(self.config.T):
+            self.t=t
+            self.shock1()
             self.setup_links()
-        for i in range(10):
-            print(self.print_bank(i))
+            self.do_interest_rate()
+            self.log.debug_banks()
+            #for i in range(self.config.N):
+            #    if self.capacity[i]>0 and (self.banks_d[i]-self.capacity[i])<=0:
+            #        print(f"{i} c={self.capacity[i]} d={self.banks_d[i]}")
 
 
 if __name__ == '__main__':
     model = Model()
+    model.log.define_log('DEBUG', None, None)
     model.run()
