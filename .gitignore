@@ -1,2 +1,7 @@
+output/
+out/
+__pycache__/
 .idea
 *~
+*.aux
+*.log
