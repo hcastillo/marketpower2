@@ -65,7 +65,15 @@ class Config:
 
     # if false when a bank dies it's not replaced: TODO
     allow_replacement_of_bankrupted : bool = True
-    
+
+    def __init__(self, T:int=None, N:int=None, seed:int=None):
+        if T:
+            self.T = T
+        if N:
+            self.N = N
+        if seed:
+            self.seed = seed
+
     def __str__(self, separator=''):
         description = sys.argv[0] if __name__ == '__main__' else ''
         for attr, value in self:
@@ -149,8 +157,8 @@ class Model:
     """
     export_datafile = None
 
-    def __init__(self):
-        self.config = Config()
+    def __init__(self, T:int=None, N:int=None, seed:int=None):
+        self.config = Config(T, N, seed)
         self.stats = Stats(self)
         self.log = Log(self)
         self.lenderchange = lc.LenderChange(self)
@@ -176,6 +184,10 @@ class Model:
     def bank(self, i, attr):
         matrix = getattr(self, attr)
         return matrix[i]
+
+    def set_bank(self, i, attr, value):
+        matrix = getattr(self, attr)
+        matrix[i] = value
 
     def bank_str(self, i, attr):
         matrix = getattr(self, attr)
@@ -406,79 +418,89 @@ class Model:
         return num_of_rationed, total_rationed
 
 
+    def check_if_bank_fails(self, bank, reason):
+        if self.E[bank] < 0 or self.L[bank] < 0:
+            self.failed[bank] = 1
+            if self.l[bank] > 0 and self.lenders[bank] is not None:
+                # firesaling process with ro=0 (no cost of liquidation). If there is also money to pay also
+                # the interests, it is used as "excess" to pay them:
+                amount_of_loan = self.l[bank]
+                recovered_with_L = self.L[bank] if self.L[bank] > 0 else 0
+                if amount_of_loan - recovered_with_L > 0:
+                    bad_debt = amount_of_loan - recovered_with_L
+                    interests = 0
+                    paid_loan = recovered_with_L
+                else:
+                    bad_debt = 0
+                    paid_loan = amount_of_loan
+                    interests = min( self.interest_rate[bank] * amount_of_loan, recovered_with_L-amount_of_loan )
+                self.log.debug("repayments", f"#{bank} uses L to pay {reason} and fails, "
+                                             f"#{self.lenders[bank]} "
+                                             f"bad_debt={self.log.format_number(bad_debt)},"
+                                             f"interests={self.log.format_number(interests)},"
+                                             f"paid={self.log.format_number(paid_loan)},")
+                self.C[self.lenders[bank]] += paid_loan
+                self.C[self.lenders[bank]] += interests
+                self.E[self.lenders[bank]] += interests
+                self.s[self.lenders[bank]] -= amount_of_loan
+                self.bad_debt[self.lenders[bank]] -= bad_debt
+            return 1
+        return 0
+
     def do_repayments(self):
         for i in range(self.config.N):
-            # bank was borrower: d>0
-            # new shock is negative varD<0 or positive>0:
+            # if bank was borrower: d>0 --------------------------------------------------------------------------
             if self.d[i] > 0:
-                # borrower has not obtained enough loan and still ows money from shock1:
+                # borrower it's rationed: it has not obtained enough before to pay the reduction of deposits or
+                # shock2 was negative also:
+                # - we pass the rationing to C (where we have something recovered due to reduction of reserves)
+                # - then we use L to cover the debt (and it affects to E in the same amounth)
                 if self.rationing[i] > 0:
                     self.C[i] -= self.rationing[i]
-                    if self.C[i] > 0:
-                        self.rationing[i] = 0
+                    if self.C[i] > 0: # if C>0 we have been saved
                         self.log.debug("repayments", f"#{i} cancels "
-                                                     f"rationing={self.log.format_number(self.rationing[i])} and has "
-                                                     f"still {self.log.format_number(self.C[i])}")
+                                                 f"rationing={self.log.format_number(self.rationing[i])} and still has "
+                                                 f"{self.log.format_number(self.C[i])}")
+                        self.rationing[i] = 0
                     else:
                         self.E[i] += self.C[i]
+                        self.L[i] += self.C[i]
                         self.C[i] = 0
-                        if self.E[i] > 0:
-                            self.log.debug("repayments", f"#{i} uses E to pay rationing, "
-                                                         f"E={self.log.format_number(self.E[i])},C=0")
-                        else:
-                            self.log.debug("repayments", f"#{i} uses E to pay rationing but fails")
-                            self.failed = 1
+                        if self.check_if_bank_fails(i, "rationing"):
                             continue
                 # now it's time to pay back the loan:
                 if self.l[i] > 0:
-                    self.C[i] -= self.l[i]
+                    amount_of_loan = self.l[i]
+                    self.C[i] -= amount_of_loan
                     if self.C[i] < 0:
-                        # we use E to pay back also the loan if not enough:
+                        # we use L to pay back also the loan if not enough:
                         self.E[i] += self.C[i]
+                        self.L[i] += self.C[i]
                         self.C[i] = 0
-                        if self.E[i] < 0:
-                            # if E<0, the <0 value means the amount not possible to cover:
-                            self.failed = 1
-                            self.bad_debt[ self.lenders[i] ] -= self.E[i]
-                            self.C[self.lenders[i]] += self.l[i] + self.E[i]
-                            self.s[self.lenders[i]] += self.l[i] + self.E[i]
-                            self.log.debug("repayments", f"#{i} uses E to pay loan and fails, "
-                                                         f"#{self.lenders[i]} "
-                                                         f"bad_debt={self.log.format_number(-self.E[i])}")
+                        self.l[i] = 0
+                        if self.check_if_bank_fails(i, "pay loan"):
                             continue
-                        else:
-                            # all the loan is paid:
-                            self.C[self.lenders[i]] += self.l[i]
-                            self.s[self.lenders[i]] += self.l[i]
-                            self.log.debug("repayments", f"#{i} pays loan, #{self.lenders[i]}"
-                                                         f" C+={self.log.format_number(self.l[i])}")
-
-                    interest_to_payback = self.interest_rate[i] * self.l[i]
+                    # now the interests of the loan:
+                    interest_to_payback = self.interest_rate[i] * amount_of_loan
                     self.C[i] -= interest_to_payback
                     self.E[i] -= interest_to_payback
                     if self.C[i] < 0:
                         # we use E to pay back also the loan if not enough:
+                        self.L[i] += self.C[i]
                         self.E[i] += self.C[i]
                         self.C[i] = 0
-                        if self.E[i] < 0:
-                            # if E<0, the <0 value means the amount not possible to cover:
-                            self.failed = 0
-                            amount_paid = interest_to_payback + self.E[i]
-                            self.C[self.lenders[i]] += amount_paid
-                            self.E[self.lenders[i]] += amount_paid
-                            self.log.debug("repayments", f"#{i} uses E to pay interests and fails,"
-                                                         f" C+={self.log.format_number(amount_paid)} and "
-                                                         f"E+={self.log.format_number(amount_paid)}")
+                        if self.check_if_bank_fails(i, "pay interests"):
+                            # interests_to_payback is greater than the L we had to use and partially paid:
+                            self.C[self.lenders[i]] += interest_to_payback - self.L[i]
+                            self.E[self.lenders[i]] += interest_to_payback - self.L[i]
                             continue
                         else:
-                            # all the interest is paid:
+                            # all the interest is paid to the lender:
                             self.C[self.lenders[i]] += interest_to_payback
                             self.E[self.lenders[i]] += interest_to_payback
-                            self.log.debug("repayments", f"#{i} pays interests, #{self.lenders[i]} "
-                                                         f"C+={self.log.format_number(self.l[i])} and "
-                                                         f"E+={self.log.format_number(self.l[i])}")
-
-                        self.log.debug("repayments", f"#{i} cancels loan and has still {self.C[i]}")
+                            self.log.debug("repayments", f"#{i} pays loan+interests to #{self.lenders[i]} "
+                                                         f"loan={self.log.format_number(amount_of_loan)} and "
+                                                         f"interests={self.log.format_number(interest_to_payback)}")
 
     def init_step(self, t):
         self.t = t

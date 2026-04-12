@@ -1,46 +1,23 @@
 import unittest
 import interbank
-import interbank_lenderchange
-
-# 1. borrower obtains a loan,
-# -------------------
 
 class InterbankTest(unittest.TestCase):
     shocks = []
     lenders_list = []
     model = None
 
-    def configureTest(self, shocks: list, N: int = None, T: int = None,
-                      seed=None, lenders_list=None):
-        self.model = interbank.Model()
-        self.model.test = True
-        InterbankTest.shocks = shocks
-        InterbankTest.lenders_list = lenders_list if lenders_list is not None else []
-        if N:
-            self.model.configure(N=N)
-        if T:
-            self.model.configure(T=T)
+    def configureTest(self, N: int = None, T: int = None, seed=None):
+        self.model = interbank.Model(T,N, seed=seed)
         self.model.log.define_log(log='DEBUG')
-        self.model.config.lender_change.set_parameter("p",0.2)
-        self.model.initialize(seed=seed)
+        self.model.log.interactive = False
+        self.model.init()
 
-    def fullTest(self):
-        self.model.run()
-
-    def __check_values__(self, bank, name, value):
-        if value < 0:
-            self.model.log.debug("******",
-                                 f"{bank.get_id()} value {name}={value} <0 is not valid: I changed it to 0")
-            return 0
-        else:
-            return value
-
-    def setBank(self, bank: interbank.Bank, C: float, L: float, D: float, E: float, lender: int = None):
-        D = self.__check_values__(bank, 'D', D)
-        L = self.__check_values__(bank, 'L', L)
-        E = self.__check_values__(bank, 'E', E)
+    def setBank(self, bank: int, C: float = None, L: float = None, D: float = None, E: float = None, lender: int = None):
+        D = D if (D is not None) else self.model.config.D_i0
+        L = L if L is not None else self.model.config.L_i0
+        E = E if E is not None else self.model.config.E_i0
         R = D*self.model.config.reserves
-        C = self.__check_values__(bank, 'C', C) - R
+        C = (C if C is not None else self.model.config.C_i0) - R
         if C < 0:
             C = 0
             L -= R
@@ -49,105 +26,37 @@ class InterbankTest(unittest.TestCase):
             if E < 0:
                 E = 0
             self.model.log.debug("******",
-                                 f"{bank.get_id()}  L+C must be equal to D+E => E modified to {E:.3f}")
-        bank.L = L
-        bank.E = E
-        bank.C = C
-        bank.D = D
-        bank.R = R
-        if not lender is None:
-            bank.lender = lender
+                                 f"{bank}  L+C must be equal to D+E => E modified to {E:.3f}")
+        self.model.set_bank(bank, "C", C)
+        self.model.set_bank(bank, "L", L)
+        self.model.set_bank(bank, "D", D)
+        self.model.set_bank(bank, "E", C)
+        self.model.set_bank(bank, "R", R)
+        if lender is not None:
+            self.model.set_bank(bank, "lenders", lender)
 
-    def assertBank(self, bank: interbank.Bank, C: float = None, L: float = None, R: float = None, D: float = None,
-                   E: float = None,
-                   paid_loan: float = None, paid_profits: float = None, s: float = None, d: float = None,
-                   B: float = None, bankrupted: bool = False, active_borrowers: dict = None):
+    def assertBank(self, bank: int, C: float = None, L: float = None, R: float = None, D: float = None,
+                   E: float = None, l: float = None, s: float = None, rationing: float = None,
+                   bad_debt: float = None, failed: bool = False, lender: int = None):
         if L:
-            self.assertEqual(bank.L, L)
+            self.assertEqual(self.model.bank(bank,"L"), L)
         if E:
-            self.assertEqual(bank.E, E)
+            self.assertEqual(self.model.bank(bank,"E"), E)
         if C:
-            self.assertEqual(bank.C, C)
+            self.assertEqual(self.model.bank(bank,"C"), C)
         if R:
-            self.assertEqual(bank.R, R)
+            self.assertEqual(self.model.bank(bank,"R"), R)
         if D:
-            self.assertEqual(bank.D, D)
-        if paid_loan:
-            self.assertEqual(bank.paid_loan, paid_loan)
-        if paid_profits:
-            self.assertEqual(bank.paid_profits, paid_profits)
-        if d:
-            self.assertEqual(bank.d, d)
+            self.assertEqual(self.model.bank(bank, "D"), D)
+        if l:
+            self.assertEqual(self.model.bank(bank, "l"), l)
         if s:
-            self.assertEqual(bank.s, s)
-        if B:
-            self.assertEqual(bank.B, B)
-        if not active_borrowers is None:
-            self.assertEqual(bank.active_borrowers, active_borrowers)
-        if bankrupted:
-            self.assertGreater(bank.failures, 0)
-        else:
-            self.assertEqual(bank.failures, 0)
-
-
-def determine_shock_value_mocked(model, bank, whichShock):
-    return bank.D + InterbankTest.shocks[model.t][whichShock][bank.id]
-
-# LenderChange.new_lender(self, this_model, bank)
-def mockedLenderChange(_, model, bank):
-    model.log.debug(f"mocked_lc",
-                    f"{bank.get_id()} initial lender is #{InterbankTest.lenders_list[model.t][bank.id]}")
-    return InterbankTest.lenders_list[model.t][bank.id]
-
-# LenderChange.extra_relationships_change(self, this_model):
-def mockedExtraRelationshipChange(_, model):
-    for bank in model.banks:
-        original = bank.lender
-        bank.lender = InterbankTest.lenders_list[model.t][bank.id]
-        if bank.lender != original:
-            if bank.lender is not None:
-                model.log.debug(f"mocked_lc", f"{bank.get_id()} new lender is #{bank.lender}")
-            else:
-                model.log.debug(f"mocked_lc", f"{bank.get_id()} no lender")
-    return None
-
-# Model.do_shock(self, which_shock):
-def mockedShock(model, whichShock):
-    for bank in model.banks:
-        bank.var_deposits = InterbankTest.shocks[model.t][whichShock][bank.id]
-        if bank.D + bank.var_deposits < 0:
-            model.log.debug(f"mocked{whichShock}",
-                            f"{bank.get_id()} modified simulated ΔD={bank.var_deposits:.3f} because we had only D={bank.D:.3f}")
-            bank.var_deposits = bank.D + bank.var_deposits if bank.D > 0 else 0
-        bank.D += bank.var_deposits
-        bank.newR = model.config.reserves * bank.D
-        bank.incrR = bank.newR - bank.R
-        bank.R = bank.newR
-        if bank.var_deposits >= 0:
-            bank.C += bank.var_deposits - bank.incrR
-            if whichShock == "shock1":
-                bank.s = bank.C  # lender capital to borrow
-            bank.d = 0  # it will not need to borrow
-            if bank.var_deposits > 0:
-                model.log.debug(f"mocked{whichShock}", f"{bank.get_id()} wins ΔD={bank.var_deposits:.3f}")
-            else:
-                model.log.debug(f"mocked{whichShock}", f"{bank.get_id()} has no shock")
-        else:
-            if whichShock == "shock1":
-                bank.s = 0  # we will not be a lender this time
-            if bank.var_deposits - bank.incrR + bank.C >= 0:
-                bank.d = 0  # it will not need to borrow
-                bank.C += bank.var_deposits - bank.incrR
-                model.log.debug(f"mocked{whichShock}",
-                                f"{bank.get_id()} loses ΔD={bank.var_deposits:.3f}, covered by capital")
-            else:
-                bank.d = abs(bank.var_deposits - bank.incrR + bank.C)  # it will need money
-                bank.C = 0
-                model.log.debug(f"mocked{whichShock}",
-                                f"{bank.get_id()} loses ΔD={bank.var_deposits:.3f}, has C={bank.C:.3f} and needs {bank.d:.3f}")
-                if whichShock == "shock2":
-                    # in case shock2, we need to fire sale to cover that bank.d:
-                    bank.do_fire_sales(bank.d, f"fire sale to cover shock", whichShock)
-                else:
-                    bank.C = 0
-        model.statistics.var_deposits[model.t] += bank.var_deposits
+            self.assertEqual(self.model.bank(bank, "s"), s)
+        if rationing:
+            self.assertEqual(self.model.bank(bank, "rationing"), rationing)
+        if bad_debt:
+            self.assertEqual(self.model.bank(bank, "bad_debt"), bad_debt)
+        if failed:
+            self.assertEqual(self.model.bank(bank, "failed"), failed)
+        if lender:
+            self.assertEqual(self.model.bank(bank, "lender"), lender)
