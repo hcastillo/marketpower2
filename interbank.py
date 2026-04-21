@@ -14,7 +14,6 @@ import random
 import re
 import sys
 import warnings
-
 import numpy as np
 import interbank_lenderchange as lc
 from interbank_log import Log
@@ -187,7 +186,8 @@ class Model:
 
     def set_bank(self, i, attr, value):
         matrix = getattr(self, attr)
-        matrix[i] = value
+        if value is not None:
+            matrix[i] = value
 
     def bank_str(self, i, attr):
         matrix = getattr(self, attr)
@@ -199,7 +199,8 @@ class Model:
         self.bad_debt = np.zeros(self.config.N, dtype=float)
         self.failed = np.zeros(self.config.N, dtype=int)
         self.D = np.zeros(self.config.N, dtype=float)
-        self.varD = np.zeros(self.config.N, dtype=float)
+        self.varD1 = np.zeros(self.config.N, dtype=float)
+        self.varD2 = np.zeros(self.config.N, dtype=float)
         self.E = np.zeros(self.config.N, dtype=float)
         self.L = np.zeros(self.config.N, dtype=float)
         self.R = np.zeros(self.config.N, dtype=float)
@@ -235,44 +236,69 @@ class Model:
     def setup_links(self):
         self.lenderchange.setup_links(save_graph=False)
 
-    def do_shock2(self):
-        rand_values = np.random.rand(self.config.N)
-        shock_values = self.config.mu + self.config.omega * rand_values
-        newD = np.zeros(self.config.N, dtype=float)
-        newR = np.zeros(self.config.N, dtype=float)
-        #newD = np.where( self.d>0, self.D * shock_values, self.D)
-        #self.varD = np.where( self.d>0, newD - self.D, 0)
-        #newR = np.where(self.d>0, self.config.reserves * newD, self.R)
-        #self.incrR = np.where( self.d>0, newR - self.R, 0)
-        #self.D = newD
-        for i in range(self.config.N):
-            if self.d[i]>0:
-                # only when it was a borrower we obtain a shock:
-                newD[i] = self.D[i]*shock_values[i]
-                self.varD[i] = newD[i] - self.D[i]
-                newR[i] = self.config.reserves * self.D[i]
-                self.varR[i] = self.R[i] - self.R[i]
-                self.D[i] = newD[i]
-                self.R[i] = newR[i]
-
-                self.C[i] += self.varD[i] - self.varR[i]
-            else:
-                self.varD[i] = 0
-                self.varR[i] = 0
-
-        self.log.debug("shock2", f"ΔD={self.log.format_number(self.varD)}")
-
-    def do_shock1(self):
-        rand_values = np.random.rand(self.config.N)
-        shock_values = self.config.mu + self.config.omega * rand_values
-        newD = self.D * shock_values
-        self.varD = newD - self.D
+    def do_shock2(self, shock_values=None):
+        # only when d>0 we will obtain a second shock:
+        if shock_values is None:
+            rand_values = np.random.rand(self.config.N)
+            shock_values = self.config.mu + self.config.omega * rand_values
+            newD = np.where(self.d > 0, self.D * shock_values, self.D)
+            self.varD2 = newD - self.D
+        else:
+            self.varD2 = shock_values
+            newD = self.D + self.varD2
         newR = self.config.reserves * newD
-        self.varR = newR - self.R
+        varR = newR - self.R
         self.D = newD
-        self.log.debug("shock1", f"ΔD={self.log.format_number(self.varD)}")
+        self.log.debug("shock2", f"ΔD={self.log.format_number(self.varD2)}")
 
-        self.C += self.varD - self.varR
+        self.C += self.varD2 - varR
+        self.R = newR
+
+
+        # if C<0, then d=|C| -> NEW demand of loan (no lenders, because not satisfied) separated from .d
+        # from shock1:
+        self.d2 = np.where( self.C<0, abs(self.C), 0)
+        # others, lenders:
+        self.s2 = np.where( self.C>=0, self.C, 0)
+        # and C<0 is impossible: those are zero now:
+        self.C[ self.C<0 ] = 0
+        self.R[ self.C<0 ] = 0
+
+
+        # for i in range(self.config.N):
+        #     if self.varD2[i]!=0:
+        #         # only when it was a borrower we obtain a shock:
+        #         newD = self.D[i]*shock_values[i]
+        #         self.varD2[i] = newD - self.D[i]
+        #         newR = self.config.reserves * self.D[i]
+        #         varR = self.R[i] - newR
+        #         self.D[i] = newD
+        #         self.R[i] = newR
+        #
+        #         self.C[i] += self.varD2[i] - varR
+        #         if self.varD2[i]>0:
+        #             self.d[i] = self.varD2[i]
+        #         else:
+        #             self.d[i] = 0
+        #     else:
+        #         self.varD2[i] = 0
+        self.log.debug("shock2", f"ΔD={self.log.format_number(self.varD2)}")
+
+    def do_shock1(self, shock_values=None):
+        if shock_values is None:
+            rand_values = np.random.rand(self.config.N)
+            shock_values = self.config.mu + self.config.omega * rand_values
+            newD = self.D * shock_values
+            self.varD1 = newD - self.D
+        else:
+            self.varD1 = shock_values
+            newD = self.D + self.varD1
+        newR = self.config.reserves * newD
+        varR = newR - self.R
+        self.D = newD
+        self.log.debug("shock1", f"ΔD={self.log.format_number(self.varD1)}")
+
+        self.C += self.varD1 - varR
         self.R = newR
         # if C<0, then d=|C| -> borrowers
         self.d = np.where( self.C<0, abs(self.C), 0)
@@ -449,58 +475,99 @@ class Model:
 
     def do_repayments(self):
         for i in range(self.config.N):
-            # if bank was borrower: d>0 --------------------------------------------------------------------------
-            if self.d[i] > 0:
-                # borrower it's rationed: it has not obtained enough before to pay the reduction of deposits or
-                # shock2 was negative also:
-                # - we pass the rationing to C (where we have something recovered due to reduction of reserves)
-                # - then we use L to cover the debt (and it affects to E in the same amounth)
-                if self.rationing[i] > 0:
-                    self.C[i] -= self.rationing[i]
-                    if self.C[i] > 0: # if C>0 we have been saved
-                        self.log.debug("repayments", f"#{i} cancels "
-                                                 f"rationing={self.log.format_number(self.rationing[i])} and still has "
+            # borrower it's rationed after shock1 ----------------------------------------------------------------------
+            # - it didn't arrived to obtain enough in a loan o has no lender
+            # - we pass the rationing to C (where we should have something... or it will fail directly)
+            # - if C is not enough, we use L to cover the debt (and it affects to E in the same amount)
+            if self.rationing[i] > 0:
+                rationing_we_have = self.rationing[i]
+                self.rationing[i] = 0
+                self.C[i] -= rationing_we_have
+                if self.C[i] >= 0:  # if C>0 we have been saved
+                    self.log.debug("repayments", f"#{i} cancels "
+                                              f"rationing={self.log.format_number(rationing_we_have)} and still has C="
+                                              f"{self.log.format_number(self.C[i])}")
+                else:
+                    self.E[i] += self.C[i]
+                    self.L[i] += self.C[i]
+                    self.C[i] = 0
+                    if self.check_if_bank_fails(i, "rationing"):
+                        continue
+
+            # if bank needs money after shock2 : d>0, we use C also, or L ----------------------------------------------
+            if self.d2[i] > 0:
+                amount_we_need = self.d2[i]
+                self.d2[i] = 0
+                self.C[i] -= amount_we_need
+                if self.C[i] >= 0:
+                    self.log.debug("repayments", f"#{i} cancels "
+                                                 f"d={self.log.format_number(amount_we_need)} and still has "
                                                  f"{self.log.format_number(self.C[i])}")
-                        self.rationing[i] = 0
+                else:
+                    self.E[i] += self.C[i]
+                    self.L[i] += self.C[i]
+                    self.C[i] = 0
+                    if self.check_if_bank_fails(i, "demand loan shock2"):
+                        continue
+
+            # now it's time to pay back the loan if there was one ------------------------------------------------------
+            if self.l[i] > 0:
+                amount_of_loan = self.l[i]
+                self.C[i] -= amount_of_loan
+                if self.C[i] < 0:
+                    # we use L to pay back also the loan if not enough:
+                    self.E[i] += self.C[i]
+                    self.L[i] += self.C[i]
+                    self.C[i] = 0
+                    self.l[i] = 0
+                    if self.check_if_bank_fails(i, "pay loan"):
+                        continue
+
+                # and the interests of the loan:
+                interest_to_payback = self.interest_rate[i] * amount_of_loan
+                self.C[i] -= interest_to_payback
+                self.E[i] -= interest_to_payback
+                if self.C[i] < 0:
+                    # we use E to pay back also the loan if not enough:
+                    self.L[i] += self.C[i]
+                    self.E[i] += self.C[i]
+                    self.C[i] = 0
+                    if self.check_if_bank_fails(i, "pay interests"):
+                        # interests_to_payback is greater than the L we had to use and partially paid:
+                        self.C[self.lenders[i]] += interest_to_payback - self.L[i]
+                        self.E[self.lenders[i]] += interest_to_payback - self.L[i]
+                        continue
                     else:
-                        self.E[i] += self.C[i]
-                        self.L[i] += self.C[i]
-                        self.C[i] = 0
-                        if self.check_if_bank_fails(i, "rationing"):
-                            continue
-                # now it's time to pay back the loan:
-                if self.l[i] > 0:
-                    amount_of_loan = self.l[i]
-                    self.C[i] -= amount_of_loan
-                    if self.C[i] < 0:
-                        # we use L to pay back also the loan if not enough:
-                        self.E[i] += self.C[i]
-                        self.L[i] += self.C[i]
-                        self.C[i] = 0
-                        self.l[i] = 0
-                        if self.check_if_bank_fails(i, "pay loan"):
-                            continue
-                    # now the interests of the loan:
-                    interest_to_payback = self.interest_rate[i] * amount_of_loan
-                    self.C[i] -= interest_to_payback
-                    self.E[i] -= interest_to_payback
-                    if self.C[i] < 0:
-                        # we use E to pay back also the loan if not enough:
-                        self.L[i] += self.C[i]
-                        self.E[i] += self.C[i]
-                        self.C[i] = 0
-                        if self.check_if_bank_fails(i, "pay interests"):
-                            # interests_to_payback is greater than the L we had to use and partially paid:
-                            self.C[self.lenders[i]] += interest_to_payback - self.L[i]
-                            self.E[self.lenders[i]] += interest_to_payback - self.L[i]
-                            continue
-                        else:
-                            # all the interest is paid to the lender:
-                            self.C[self.lenders[i]] += interest_to_payback
-                            self.E[self.lenders[i]] += interest_to_payback
-                            self.log.debug("repayments", f"#{i} pays loan+interests to #{self.lenders[i]} "
-                                                         f"loan={self.log.format_number(amount_of_loan)} and "
-                                                         f"interests={self.log.format_number(interest_to_payback)}")
+                        # all the interest is paid to the lender:
+                        self.C[self.lenders[i]] += interest_to_payback
+                        self.E[self.lenders[i]] += interest_to_payback
+                        self.log.debug("repayments", f"#{i} pays loan+interests to #{self.lenders[i]} "
+                                                     f"loan={self.log.format_number(amount_of_loan)} and "
+                                                     f"interests={self.log.format_number(interest_to_payback)}")
+
+
+    def replace_failed_banks(self):
+        surviving = self.failed != 1
+        if not np.any(surviving):
+            return
+        
+        def mode(data):
+            values, counts = np.unique(data, return_counts=True)
+            return values[np.argmax(counts)]
+        
+        mode_c = mode(self.C[surviving])
+        mode_d = mode(self.D[surviving])
+        mode_e = mode(self.E[surviving])
+        
+        for i in range(self.config.N):
+            if self.failed[i] == 1:
+                self.C[i] = mode_c
+                self.E[i] = mode_e
+                self.D[i] = mode_d
+                self.R[i] = self.C[i] * self.config.reserves
+                self.L[i] = self.D[i] + self.E[i] - self.C[i] - self.R[i]
+                self.failed[i] = 0
+
 
     def init_step(self, t):
         self.t = t
@@ -530,6 +597,7 @@ class Model:
             self.stats.compute_var_d2()
             self.log.debug_banks()
             self.do_repayments()
+            self.replace_failed_banks()
             self.stats.compute_liquidity()
             self.stats.compute_deposits()
             self.stats.compute_reserves()

@@ -54,8 +54,8 @@ class Log:
         if i<self.model.config.N:
             result =f"bank#{i} C={format_value(i,"C")} L={format_value(i,"L")} R={format_value(i,"R")} |" +\
                     f" D={format_value(i,"D")} E={format_value(i,"E")} "
-            if self.model.d[i]>0:
-                result +=(f" d={format_value(i,"d")}")
+            if self.model.varD1[i]<0 or self.model.varD2[i]<0 or self.model.d[i]<0:
+                result += f" d={format_value(i, "d")}"
                 #          f"{'lender=' + str(self.model.lenders[i]) if self.model.lenders[i] >= 0 else ''}")
                 if self.model.prob_bankruptcy[i]>=0:
                     result +=f" p={format_value(i,"prob_bankruptcy")} "
@@ -67,22 +67,25 @@ class Log:
                     result +=f" c={format_value(i,"capacity")} "
                 if self.model.interest_rate[i]>=0:
                     result +=f" r={format_value(i,"interest_rate")} "
+                if self.model.l[i]>=0:
+                    result +=f" l={format_value(i,"l")} "
+                if self.model.rationing[i]>=0:
+                    result +=f" ε={format_value(i,"rationing")} "
             else:
-                result +=f" s={format_value(i,"s")}"
+                if self.model.s[i]>0:
+                    result +=f" s={format_value(i,"s")}"
                 if self.model.psi[i]>=0:
                     result += f" ψ={format_value(i,"psi")}"
                 if self.model.bad_debt[i]>=0:
                     result += f" ψ={format_value(i,"bad_debt")}"
 
             if self.model.failed[i]:
-                result += f" ***failed***"
-            return result.strip()
-        else:
-            return ""
+                result += f"  **failed**"
+            self.debug("------", result.strip())
 
     def debug_banks(self):
         for i in range(self.model.config.N):
-            self.debug("------", self.debug_bank(i))
+            self.debug_bank(i)
 
     @staticmethod
     def get_level(option):

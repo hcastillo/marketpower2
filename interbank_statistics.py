@@ -218,13 +218,13 @@ class Statistics:
         self.psi.append( np.nanmean(self.model.psi) )
 
     def compute_var_d1(self):
-        self.var_d1.append(np.sum(self.model.varD))
+        self.var_d1.append(np.sum(self.model.varD1))
 
     def compute_interest_rate(self):
         self.interest_rates.append( np.nanmean(self.model.interest_rate) )
 
     def compute_var_d2(self):
-        self.var_d2.append(np.sum(self.model.varD))
+        self.var_d2.append(np.sum(self.model.varD2))
         self.var_d.append(self.var_d1[-1] + self.var_d2[-1])
 
     def compute_liquidity(self):

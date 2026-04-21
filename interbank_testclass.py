@@ -1,4 +1,8 @@
+import sys
 import unittest
+
+import numpy as np
+
 import interbank
 
 class InterbankTest(unittest.TestCase):
@@ -12,51 +16,77 @@ class InterbankTest(unittest.TestCase):
         self.model.log.interactive = False
         self.model.init()
 
-    def setBank(self, bank: int, C: float = None, L: float = None, D: float = None, E: float = None, lender: int = None):
-        D = D if (D is not None) else self.model.config.D_i0
-        L = L if L is not None else self.model.config.L_i0
-        E = E if E is not None else self.model.config.E_i0
-        R = D*self.model.config.reserves
-        C = (C if C is not None else self.model.config.C_i0) - R
-        if C < 0:
-            C = 0
-            L -= R
-        if L + C + R != D + E:
-            E = L + C + R - D
-            if E < 0:
-                E = 0
-            self.model.log.debug("******",
-                                 f"{bank}  L+C must be equal to D+E => E modified to {E:.3f}")
-        self.model.set_bank(bank, "C", C)
+    def setShock1(self, bank:int = None, shock: float = None, shocks: np.ndarray = None):
+        if shocks is None:
+            shocks = np.zeros(self.model.config.N)
+            shocks[bank] = shock
+        self.model.do_shock1(shocks)
+
+    def setShock2(self, bank:int = None, shock: float = None, shocks: np.ndarray = None):
+        if shocks is None:
+            shocks = np.zeros(self.model.config.N)
+            shocks[bank] = shock
+        self.model.do_shock2(shocks)
+
+    def setBank(self, bank: int, C: float = 0, L: float = 0, D: float = 0,
+                E: float = 0, R: float = None, lender: int = -1, d:float = None, varD1: float = None, l: float = None,
+                rationing: float = None, s: float = None, failed: bool = None, interest_rate: float = None,
+                bad_debt: float = None):
+        if R is None:
+            if D is None:
+                self.model.log.error("setBank", "#{bank} D must be set if you don't set R")
+                sys.exit(-1)
+            else:
+                R = D * self.model.config.reserves
+
+        s = 0 if s is None else s
+        l = 0 if l is None else l
+        rationing = 0 if rationing is None else rationing
+        failed = False if failed is None else failed
+        bad_debt = 0 if bad_debt is None else bad_debt
+
+        if L + C + R + s != D + E + l + rationing:
+            self.model.log.error("setBank", f"#{bank} L+C+R+s must be equal to D+E+l+rationing: "
+                                            f"L={L} C={C} R={R} s={s} ({L+C+R+s}) != ({D+E+l+rationing}) "
+                                            f"D={D} E={E} l={l} rationing={rationing}")
+            sys.exit(-1)
         self.model.set_bank(bank, "L", L)
-        self.model.set_bank(bank, "D", D)
-        self.model.set_bank(bank, "E", C)
+        self.model.set_bank(bank, "C", C)
         self.model.set_bank(bank, "R", R)
-        if lender is not None:
-            self.model.set_bank(bank, "lenders", lender)
+        self.model.set_bank(bank, "s", s)
+        self.model.set_bank(bank, "D", D)
+        self.model.set_bank(bank, "E", E)
+        self.model.set_bank(bank, "d", d)
+        self.model.set_bank(bank, "interest_rate", interest_rate)
+        self.model.set_bank(bank, "varD1", varD1)
+        self.model.set_bank(bank, "rationing", rationing)
+        self.model.set_bank(bank, "l", l)
+        self.model.set_bank(bank, "lenders", lender)
+        self.model.set_bank(bank, "bad_debt", bad_debt)
+        self.model.set_bank(bank, "failed", failed)
 
     def assertBank(self, bank: int, C: float = None, L: float = None, R: float = None, D: float = None,
                    E: float = None, l: float = None, s: float = None, rationing: float = None,
                    bad_debt: float = None, failed: bool = False, lender: int = None):
-        if L:
-            self.assertEqual(self.model.bank(bank,"L"), L)
-        if E:
-            self.assertEqual(self.model.bank(bank,"E"), E)
-        if C:
-            self.assertEqual(self.model.bank(bank,"C"), C)
-        if R:
-            self.assertEqual(self.model.bank(bank,"R"), R)
-        if D:
-            self.assertEqual(self.model.bank(bank, "D"), D)
-        if l:
-            self.assertEqual(self.model.bank(bank, "l"), l)
-        if s:
-            self.assertEqual(self.model.bank(bank, "s"), s)
-        if rationing:
-            self.assertEqual(self.model.bank(bank, "rationing"), rationing)
-        if bad_debt:
-            self.assertEqual(self.model.bank(bank, "bad_debt"), bad_debt)
-        if failed:
-            self.assertEqual(self.model.bank(bank, "failed"), failed)
-        if lender:
-            self.assertEqual(self.model.bank(bank, "lender"), lender)
+        if L is not None:
+            self.assertEqual(round(self.model.bank(bank,"L"),8), L)
+        if E is not None:
+            self.assertEqual(round(self.model.bank(bank,"E"),8), E)
+        if C is not None:
+            self.assertEqual(round(self.model.bank(bank,"C"),8), C)
+        if R is not None:
+            self.assertEqual(round(self.model.bank(bank,"R"),8), R)
+        if D is not None:
+            self.assertEqual(round(self.model.bank(bank, "D"),8), D)
+        if l is not None:
+            self.assertEqual(round(self.model.bank(bank, "l"),8), l)
+        if s is not None:
+            self.assertEqual(round(self.model.bank(bank, "s"),8), s)
+        if rationing is not None:
+            self.assertEqual(round(self.model.bank(bank, "rationing"),8), rationing)
+        if bad_debt is not None:
+            self.assertEqual(round(self.model.bank(bank, "bad_debt"),8), bad_debt)
+        if failed is not None:
+            self.assertEqual(round(self.model.bank(bank, "failed"),8), failed)
+        if lender is not None:
+            self.assertEqual(round(self.model.bank(bank, "lenders"),8), lender)
