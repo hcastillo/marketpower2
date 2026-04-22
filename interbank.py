@@ -61,6 +61,9 @@ class Config:
     D_i0: float = 9  # deposits
     E_i0: float = 1  # equity
     r_i0: float = 0.02  # initial rate
+    
+    # maximum interest rate that can be applied to a loan (to avoid infinite rates when bankruptcy probability is 0 or psi=1)
+    max_interest_rate: float = 1
 
     # if false when a bank dies it's not replaced: TODO
     allow_replacement_of_bankrupted : bool = True
@@ -335,8 +338,9 @@ class Model:
         #TODO se podria calcular la prob de bankruptcy para cada borrower distinto
         #     contando únicamente sus posibles lenders y así sería más heterogéneo
         # 1. probability of bankruptcy:
-        max_e_borrowers = np.nanmax( self.E[self.d>0]) if len(self.E[self.d>0])>0 else np.nan
-        self.prob_bankruptcy = np.where( self.d>0, self.E/ max_e_borrowers, np.nan)
+        borrowers_E = self.E[self.d>0]
+        max_e_borrowers = np.nanmax(borrowers_E) if len(borrowers_E) > 0 and not np.isnan(borrowers_E).all() else 1.0
+        self.prob_bankruptcy = np.where(self.d > 0, self.E / max_e_borrowers, np.nan)
         # max_e=0
         # for i in range(self.config.N):
         #     if self.d[i]>0:
@@ -349,7 +353,6 @@ class Model:
         #         self.prob_bankruptcy[i] = np.nan
         # 2. leverage:
         self.leverage = np.where( self.d>0, self.d / self.E, np.nan)
-        max_leverage = np.nanmax(self.leverage) if len(self.leverage)>0 else np.nan
         # max_leverage = 0
         # for i in range(self.config.N):
         #     if self.d[i]>0:
@@ -359,6 +362,7 @@ class Model:
         #     else:
         #         self.leverage[i] = np.nan
         # 3. haircut:
+        max_leverage = np.nanmax(self.leverage) if len(self.leverage) > 0 and not np.isnan(self.leverage).all() else 1.0
         self.haircut = np.where( self.d>0, self.leverage / max_leverage, np.nan)
         # for i in range(self.config.N):
         #     if self.d[i]>0 and max_leverage:
@@ -373,9 +377,10 @@ class Model:
         #     else:
         #         self.capacity[i] = np.nan
         # 5. psi (market power of lenders):
-        if self.E[self.s>0].size > 0:
-            max_e_lenders = np.nanmax(self.E[self.s>0])
-            self.psi = np.where( self.s>0, self.E / max_e_lenders, np.nan)
+        lenders_E = self.E[self.s>0]
+        if lenders_E.size > 0 and not np.isnan(lenders_E).all():
+            max_e_lenders = np.nanmax(lenders_E)
+            self.psi = np.where(self.s > 0, self.E / max_e_lenders, np.nan)
         else:
             self.psi[:] = 1
         # for i in range(self.config.N):
@@ -388,11 +393,13 @@ class Model:
         #         self.psi[i] = np.nan
         # 6. interest_rate, for borrowers with its lender:
         for i in range(self.config.N):
-            if self.d[i]>0 and self.lenders[i]>=0:
+            if self.d[i] > 0 and self.lenders[i] != -1:
                 psi = self.psi[self.lenders[i]]
-                if psi==1:
-                    psi=0.99
-                self.interest_rate[i] = self.config.m / (self.prob_bankruptcy[i] * (1 - psi))
+                denominator = self.prob_bankruptcy[i] * (1 - psi)
+                if denominator == 0 or np.isnan(denominator):
+                    self.interest_rate[i] = self.config.max_interest_rate
+                else:
+                    self.interest_rate[i] = self.config.m / denominator
             else:
                 self.interest_rate[i] = np.nan
 
@@ -413,7 +420,7 @@ class Model:
                     total_rationed += self.rationing[i]
                     num_of_rationed += 1
                     string_result += f"rationed with no lender "
-                elif self.s[ self.lenders[i]] >= self.capacity[i]:
+                elif self.lenders[i] != -1 and self.s[self.lenders[i]] >= self.capacity[i]:
                     # this includes d=c, and rationing will be 0
                     #
                     # borrower:
@@ -426,23 +433,29 @@ class Model:
                     # lender:
                     self.C[ self.lenders[i]] -= self.capacity[i]
                     self.s[ self.lenders[i]] -= self.capacity[i]
-                else: # if self.s[ self.lenders[i]] < self.capacity[i]:
+                elif self.lenders[i] != -1 and self.s[self.lenders[i]] < self.capacity[i]:
                     # borrower:
                     string_result += (f"s<c ({self.log.format_number(self.s[ self.lenders[i]])}>"
                                       f"{self.log.format_number(self.capacity[i])}) ")
-                    self.l[i] = self.s[ self.lenders[i]]
-                    self.rationing[i] = self.d[i] - self.s[ self.lenders[i]]
+                    self.l[i] = self.s[self.lenders[i]]
+                    self.rationing[i] = self.d[i] - self.s[self.lenders[i]]
                     # lender:
-                    self.C[ self.lenders[i]] = 0
-                    self.s[ self.lenders[i]] = 0
+                    self.C[self.lenders[i]] = 0
+                    self.s[self.lenders[i]] = 0
+                else:
+                    self.l[i] = np.nan
+                    self.rationing[i] = self.d[i]
 
                 if self.rationing[i]>0:
                     total_rationed += self.rationing[i]
                     num_of_rationed += 1
                     string_result += f" rationed={self.log.format_number(self.rationing[i])},"
-                self.log.debug("loans ",f"{string_result}l={self.capacity[i]},"
-                                        f"lender.C={self.log.format_number(self.C[ self.lenders[i]])},"
-                                        f"lender.s={self.log.format_number(self.s[ self.lenders[i]])}")
+                if self.lenders[i] != -1:
+                    self.log.debug("loans ", f"{string_result}l={self.capacity[i]},"
+                                            f"lender.C={self.log.format_number(self.C[self.lenders[i]])},"
+                                            f"lender.s={self.log.format_number(self.s[self.lenders[i]])}")
+                else:
+                    self.log.debug("loans ", f"{string_result}l=nan, lender=no lender")
 
         return num_of_rationed, total_rationed
 
@@ -450,7 +463,7 @@ class Model:
     def check_if_bank_fails(self, bank, reason):
         if self.E[bank] < 0 or self.L[bank] < 0:
             self.failed[bank] = 1
-            if self.l[bank] > 0 and self.lenders[bank] is not None:
+            if self.l[bank] > 0 and self.lenders[bank] != -1:
                 # firesaling process with ro=0 (no cost of liquidation). If there is also money to pay also
                 # the interests, it is used as "excess" to pay them:
                 amount_of_loan = self.l[bank]
@@ -551,10 +564,14 @@ class Model:
 
     def replace_failed_banks(self):
         surviving = self.failed != 1
-        if not np.any(surviving):
+        num_surviving = np.sum(surviving)
+        if num_surviving == 0:
             return
         
         def mode(data):
+            unique_vals = np.unique(data)
+            if len(unique_vals) == 0:
+                return 0.0
             values, counts = np.unique(data, return_counts=True)
             return values[np.argmax(counts)]
         
