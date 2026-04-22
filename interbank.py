@@ -23,7 +23,7 @@ class Config:
     """
         Configuration parameters for the interbank network
     """
-    T: int = 10  # time (1000)
+    T: int = 300  # time (1000)
     N: int = 10 # number of banks (50)
 
     reserves: float = 0.02
@@ -373,8 +373,11 @@ class Model:
         #     else:
         #         self.capacity[i] = np.nan
         # 5. psi (market power of lenders):
-        max_e_lenders = np.nanmax(self.E[self.s>0])
-        self.psi = np.where( self.s>0, self.E / max_e_lenders, np.nan)
+        if self.E[self.s>0].size > 0:
+            max_e_lenders = np.nanmax(self.E[self.s>0])
+            self.psi = np.where( self.s>0, self.E / max_e_lenders, np.nan)
+        else:
+            self.psi[:] = 1
         # for i in range(self.config.N):
         #     if self.E[i]>max_e_lenders:
         #         max_e_lenders = self.E[i]
@@ -634,6 +637,7 @@ class Model:
         self.config.define_values_from_args(other_possible_config_args)
         self.log.define_log(args.log, args.logfile)
         self.stats.define_output_format(args.output_format)
+        self.stats.define_output_directory(args.output)
         self.stats.define_output_file(args.save)
         self.stats.define_plot_format(args.plot_format)
         self.log.interactive = True

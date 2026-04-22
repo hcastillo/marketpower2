@@ -56,7 +56,7 @@ class Statistics:
                 setattr(self, attr, [])
 
     def finish(self):
-        self.save(self.export_datafile, str(self.model.config))
+        self.save( export_datafile=self.export_datafile, export_description=str(self.model.config))
         result = pd.DataFrame()
         if not self.model.log.interactive:
             for element_name, element in self.enumerate_results():
@@ -151,7 +151,7 @@ class Statistics:
 
     def get_export_path(self, filename, ending_name=''):
         if not os.path.dirname(filename):
-            filename = '{}/{}'.format(self.output_directory, filename)
+            filename = '{}/{}'.format(self.output_directory if self.output_directory else '.', filename)
         path, extension = os.path.splitext(filename)
         if ending_name:
             return path + ending_name
@@ -195,9 +195,14 @@ class Statistics:
                 print('Invalid plot file format: {}'.format(plot_format))
                 sys.exit(-1)
 
+    def define_output_directory(self, output_directory):
+        if output_directory:
+            self.output_directory = output_directory
+
     def define_output_file(self, output_file):
         if output_file:
-            self.output_directory = os.path.dirname(output_file)
+            if os.path.dirname(output_file):
+                self.output_directory = os.path.dirname(output_file)
             self.export_datafile = os.path.basename(output_file)
 
     def define_output_format(self, output_format):
