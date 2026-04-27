@@ -20,6 +20,7 @@ class Log:
     logger = logging.getLogger('interbank')
     modules = []
     model = None
+    model_name = ''
     logLevel = 'DEBUG'
     progress_bar = None
     interactive = False
@@ -101,21 +102,22 @@ class Log:
                 for textline in text:
                     self.debug(module, textline)
             elif text:
-                self.logger.debug('t={}/{} {}'.format(self.model.t, module, text))
+                self.logger.debug('t={}/{} {}'.format(self.model.t, (self.model_name+'_'+module) if self.model_name else module, text))
 
     def info(self, module, text):
         if self.modules == [] or module in self.modules:
             if text:
-                self.logger.info(' t={}/{} {}'.format(self.model.t, module, text))
+                self.logger.info(' t={}/{} {}'.format(self.model.t, (self.model_name+'_'+module) if self.model_name else module, text))
 
     def error(self, module, text):
         if text:
-            self.logger.error('t={}/{} {}'.format(self.model.t, module, text))
+            self.logger.error('t={}/{} {}'.format(self.model.t, (self.model_name+module) if self.model_name else module, text))
 
-    def define_log(self, log: str, logfile: str = ''):
+    def define_log(self, log: str, logfile: str = '', model_name: str = ''):
         formatter = logging.Formatter('%(levelname)s-' + '- %(message)s')
         self.logLevel = Log.get_level(log.upper())
         self.logger.setLevel(self.logLevel)
+        self.model_name = model_name
         if logfile:
             if not os.path.dirname(logfile):
                 logfile = '{}/{}'.format(self.model.statistics.OUTPUT_DIRECTORY, logfile)

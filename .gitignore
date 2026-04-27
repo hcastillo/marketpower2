@@ -5,3 +5,5 @@ __pycache__/
 *~
 *.aux
 *.log
+
+sync_config.jsonc

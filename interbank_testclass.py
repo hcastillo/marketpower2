@@ -10,9 +10,9 @@ class InterbankTest(unittest.TestCase):
     lenders_list = []
     model = None
 
-    def configureTest(self, N: int = None, T: int = None, seed=None):
+    def configureTest(self, N: int = None, T: int = None, seed=None, model_name=''):
         self.model = interbank.Model(T,N, seed=seed)
-        self.model.log.define_log(log='DEBUG')
+        self.model.log.define_log(log='DEBUG', model_name=model_name)
         self.model.log.interactive = False
         self.model.init()
 
@@ -45,7 +45,7 @@ class InterbankTest(unittest.TestCase):
         failed = False if failed is None else failed
         bad_debt = 0 if bad_debt is None else bad_debt
 
-        if L + C + R + s != D + E + l + rationing:
+        if round(L + C + R + s, 8) != round(D + E + l + rationing, 8):
             self.model.log.error("setBank", f"#{bank} L+C+R+s must be equal to D+E+l+rationing: "
                                             f"L={L} C={C} R={R} s={s} ({L+C+R+s}) != ({D+E+l+rationing}) "
                                             f"D={D} E={E} l={l} rationing={rationing}")
