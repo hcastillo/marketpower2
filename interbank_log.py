@@ -50,10 +50,10 @@ class Log:
                 result = ' '+result
             return result
 
-    def debug_bank(self, i):
+    def debug_bank(self, i, message=''):
         format_value = self.model.bank_str
         if i<self.model.config.N:
-            result =f"bank#{i} C={format_value(i,"C")} L={format_value(i,"L")} R={format_value(i,"R")} |" +\
+            result =f"bank#{i}{message} C={format_value(i,"C")} L={format_value(i,"L")} R={format_value(i,"R")} |" +\
                     f" D={format_value(i,"D")} E={format_value(i,"E")} "
             if self.model.varD1[i]<0 or self.model.varD2[i]<0 or self.model.d[i]<0:
                 result += f" d={format_value(i, "d")}"
@@ -78,7 +78,7 @@ class Log:
                 if self.model.psi[i]>=0:
                     result += f" ψ={format_value(i,"psi")}"
                 if self.model.bad_debt[i]>=0:
-                    result += f" ψ={format_value(i,"bad_debt")}"
+                    result += f" bad_debt={format_value(i,"bad_debt")}"
 
             if self.model.failed[i]:
                 result += f"  **failed**"

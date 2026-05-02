@@ -31,7 +31,10 @@ class Statistics:
         self.communities = []
         self.communities_not_alone = []
         self.gcs = []
+        self.num_lenders = []
+        self.num_borrowers = []
         self.psi = []
+        self.bankruptcies = []
         self.lenders = []
         self.potential_lenders = []
         self.borrowers = []
@@ -39,6 +42,8 @@ class Statistics:
         self.var_d1 = []
         self.var_d2 = []
         self.var_d = []
+        self.d = []
+        self.d2 = []
         self.asset_i = []
         self.asset_j = []
         self.bad_debt = []
@@ -222,34 +227,45 @@ class Statistics:
     def compute_psi(self):
         self.psi.append( np.nanmean(self.model.psi) )
 
+    def compute_num_lenders_borrowers(self):
+        self.num_lenders.append(np.sum(self.model.s>0))
+        self.num_borrowers.append(np.sum(self.model.d>0))
+
+    def compute_bankruptcies(self):
+        self.bankruptcies.append(np.nansum(self.model.failed))
+
     def compute_var_d1(self):
         self.var_d1.append(np.sum(self.model.varD1))
 
     def compute_interest_rate(self):
         self.interest_rates.append( np.nanmean(self.model.interest_rate) )
 
+    def compute_demand_loan(self):
+        self.d.append(np.sum(self.model.d))
+        self.d2.append(np.sum(self.model.d2))
+
     def compute_var_d2(self):
         self.var_d2.append(np.sum(self.model.varD2))
         self.var_d.append(self.var_d1[-1] + self.var_d2[-1])
 
     def compute_liquidity(self):
-        self.liquidity.append(np.sum(self.model.C))
+        self.liquidity.append(np.nansum(self.model.C))
 
     def compute_rationing(self, num_of_rationed, total_rationed):
         self.rationing.append(total_rationed)
         self.num_of_rationed.append(num_of_rationed)
 
     def compute_deposits(self):
-        self.deposits.append(np.sum(self.model.D))
+        self.deposits.append(np.nansum(self.model.D))
 
     def compute_reserves(self):
-        self.reserves.append(np.sum(self.model.R))
+        self.reserves.append(np.nansum(self.model.R))
 
     def compute_bad_debt(self):
-        self.bad_debt.append(np.sum(np.sum(self.model.bad_debt)))
+        self.bad_debt.append(-np.nansum(self.model.bad_debt))
 
     def compute_equity(self):
-        self.equity.append(np.sum(self.model.E))
+        self.equity.append(np.nansum(self.model.E))
 
     def compute_assets(self):
         assets = self.model.C+self.model.L+self.model.R

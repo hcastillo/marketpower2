@@ -23,8 +23,8 @@ class Config:
     """
         Configuration parameters for the interbank network
     """
-    T: int = 300  # time (1000)
-    N: int = 10 # number of banks (50)
+    T: int = 1000  # time (1000)
+    N: int = 50 # number of banks (50)
 
     reserves: float = 0.02
 
@@ -40,7 +40,9 @@ class Config:
     # shocks parameters: mi=0.7 omega=0.6 for perfect balance
     # less omega, more negative is the shock
     mu: float = 0.7  # mi µ
-    omega: float = 0.6  # omega ω
+    omega: float = 0.55 # omega ω   
+    #TODO 0.6 teniamos antes, apenas habia d>0.
+    #  0.6 perfect simmetrical shock, 0.5 es eagerly negative shock
 
     # screening costs
     #phi: float = 0.025  # phi Φ
@@ -341,6 +343,12 @@ class Model:
         borrowers_E = self.E[self.d>0]
         max_e_borrowers = np.nanmax(borrowers_E) if len(borrowers_E) > 0 and not np.isnan(borrowers_E).all() else 1.0
         self.prob_bankruptcy = np.where(self.d > 0, self.E / max_e_borrowers, np.nan)
+
+        for i in range(self.config.N):
+            if self.d[i] > 0:
+                self.log.debug("GAB", f"#{i} E={self.log.format_number(self.E[i])},Emax={self.log.format_number(max_e_borrowers)}, prob_bankruptcy={self.log.format_number(self.prob_bankruptcy[i])}, "
+                                               f"psi={self.log.format_number(self.psi[i])}, "
+                                               f"interest_rate={self.log.format_number(self.interest_rate[i])}")
         # max_e=0
         # for i in range(self.config.N):
         #     if self.d[i]>0:
@@ -380,9 +388,10 @@ class Model:
         lenders_E = self.E[self.s>0]
         if lenders_E.size > 0 and not np.isnan(lenders_E).all():
             max_e_lenders = np.nanmax(lenders_E)
-            self.psi = np.where(self.s > 0, self.E / max_e_lenders, np.nan)
+            self.psi[:] = 0 
+            # self.psi = np.where(self.s > 0, self.E / max_e_lenders, np.nan)
         else:
-            self.psi[:] = 1
+            self.psi[:] = 0
         # for i in range(self.config.N):
         #     if self.E[i]>max_e_lenders:
         #         max_e_lenders = self.E[i]
@@ -408,7 +417,6 @@ class Model:
         num_of_rationed = 0
         total_rationed = 0
         total_demanded = 0
-        total_loans = 0
         for i in range(self.config.N):
             if self.d[i] > 0:
                 total_demanded += self.d[i]
@@ -581,16 +589,22 @@ class Model:
         
         for i in range(self.config.N):
             if self.failed[i] == 1:
-                self.C[i] = mode_c
-                self.E[i] = mode_e
-                self.D[i] = mode_d
-                self.R[i] = self.C[i] * self.config.reserves
-                self.L[i] = self.D[i] + self.E[i] - self.C[i] - self.R[i]
+                #self.C[i] = mode_c
+                #self.E[i] = mode_e
+                #self.D[i] = mode_d
+                #self.R[i] = self.C[i] * self.config.reserves
+                #self.L[i] = self.D[i] + self.E[i] - self.C[i] - self.R[i]
+                self.E[i] = self.config.E_i0
+                self.D[i] = self.config.D_i0
+                self.L[i] = self.config.L_i0
+                self.R[i] = self.config.r_i0 * self.D[i]
+                self.C[i] = self.C[i] - self.R[i]
                 self.failed[i] = 0
 
 
     def init_step(self, t):
         self.t = t
+        self.l = np.zeros(self.config.N)
         self.bad_debt = np.zeros(self.config.N)
         
     def run(self):
@@ -604,6 +618,7 @@ class Model:
             self.stats.compute_graph()
             self.stats.compute_potential_lenders()
             self.do_interest_rate()
+            self.stats.compute_num_lenders_borrowers()
             self.stats.compute_psi()
             self.stats.compute_assets()
             self.stats.compute_interest_rate()
@@ -614,9 +629,11 @@ class Model:
             self.stats.compute_lenders_and_borrowers()
             self.stats.compute_rationing(num_of_rationed, total_rationed)
             self.do_shock2()
+            self.stats.compute_demand_loan()
             self.stats.compute_var_d2()
             self.log.debug_banks()
             self.do_repayments()
+            self.stats.compute_bankruptcies()
             self.replace_failed_banks()
             self.stats.compute_liquidity()
             self.stats.compute_deposits()
