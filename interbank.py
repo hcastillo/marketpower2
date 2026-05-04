@@ -70,6 +70,9 @@ class Config:
     # if false when a bank dies it's not replaced: TODO
     allow_replacement_of_bankrupted : bool = True
 
+
+    allow_use_of_L_to_pay_rationing : bool = False
+
     def __init__(self, T:int=None, N:int=None, seed:int=None):
         if T:
             self.T = T
@@ -493,7 +496,7 @@ class Model:
                 self.C[self.lenders[bank]] += interests
                 self.E[self.lenders[bank]] += interests
                 self.s[self.lenders[bank]] -= amount_of_loan
-                self.bad_debt[self.lenders[bank]] -= bad_debt
+                self.bad_debt[self.lenders[bank]] += abs(bad_debt)
             return 1
         return 0
 
@@ -512,11 +515,15 @@ class Model:
                                               f"rationing={self.log.format_number(rationing_we_have)} and still has C="
                                               f"{self.log.format_number(self.C[i])}")
                 else:
-                    self.E[i] += self.C[i]
-                    self.L[i] += self.C[i]
-                    self.C[i] = 0
-                    if self.check_if_bank_fails(i, "rationing"):
-                        continue
+                    if self.config.allow_use_of_L_to_pay_rationing:
+                        self.E[i] += self.C[i]
+                        self.L[i] += self.C[i]
+                        self.C[i] = 0
+                        if self.check_if_bank_fails(i, "rationing"):
+                            continue
+                    else:
+                        if self.check_if_bank_fails(i, "rationing"):
+                            continue
 
             # if bank needs money after shock2 : d>0, we use C also, or L ----------------------------------------------
             if self.d2[i] > 0:
@@ -527,7 +534,7 @@ class Model:
                     self.log.debug("repayments", f"#{i} cancels "
                                                  f"d={self.log.format_number(amount_we_need)} and still has "
                                                  f"{self.log.format_number(self.C[i])}")
-                else:
+                else: 
                     self.E[i] += self.C[i]
                     self.L[i] += self.C[i]
                     self.C[i] = 0

@@ -14,7 +14,6 @@ import sys
 import pandas as pd
 import lxml.etree
 import lxml.builder
-
 from interbank_log import Log
 
 
@@ -262,7 +261,7 @@ class Statistics:
         self.reserves.append(np.nansum(self.model.R))
 
     def compute_bad_debt(self):
-        self.bad_debt.append(-np.nansum(self.model.bad_debt))
+        self.bad_debt.append(abs(np.nansum(self.model.bad_debt)))
 
     def compute_equity(self):
         self.equity.append(np.nansum(self.model.E))

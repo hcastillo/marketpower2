@@ -1,9 +1,14 @@
-output/
-out/
+# Python-generated files
 __pycache__/
-.idea
-*~
-*.aux
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+uv.lock
+output/
+# Virtual environments
+.venv
 *.log
-
-sync_config.jsonc
+*.aux
+.*
