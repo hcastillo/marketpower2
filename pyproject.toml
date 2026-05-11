@@ -1,7 +1,7 @@
 [project]
 name = "uv"
 version = "0.1.0"
-description = "Add your description here"
+description = "econo-ml: Reinforce Learning Policy Recommendation for Interbank Network Stability"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -11,4 +11,5 @@ dependencies = [
     "numpy>=2.4.4",
     "pandas>=3.0.2",
     "progress>=1.6.1",
+    "scipy>=1.17.1",
 ]

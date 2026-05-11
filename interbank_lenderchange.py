@@ -200,7 +200,7 @@ class LenderChange:
 
     def generate_banks_graph(self):
         result = nx.erdos_renyi_graph(n=self.model.config.N, p=self.model.config.p)
-        return result, f"erdos_renyi p={self.model.config.p:5.3} {GraphStatistics.describe(result)}"
+        return result, f"erdos_renyi p={self.model.config.p:5.3f} {GraphStatistics.describe(result)}"
 
     #TODO: quitar self.model
     # quitar export_datafile

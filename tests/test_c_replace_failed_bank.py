@@ -21,10 +21,12 @@ class ValuesAfterExecutionTestCase(interbank_testclass.InterbankTest):
         self.setBank(1, C=5, L=4.5, D=5, E=5)
         self.setBank(2, C=5, L=0.5, D=5, E=1)
         self.setBank(3, C=1, L=4.5, D=5, E=1)
-        self.model.log.debug_banks()
+        self.model.log.debug_bank(0)
+        self.assertBank(0, C=0, failed=True)
         self.model.replace_failed_banks()
-        self.model.log.debug_banks()
-        self.assertBank(0, C=5, D=5, E=1, L=0.5)
+        self.model.log.debug_bank(0)
+        self.assertBank(0, C=self.model.config.C_i0 - self.model.config.r_i0 * self.model.config.D_i0, 
+                           D=self.model.config.D_i0, E=self.model.config.E_i0, L=self.model.config.L_i0, failed=False)
 
 
 if __name__ == '__main__':
