@@ -44,6 +44,34 @@
           python -m experiments.exp_shockedmarket --do
   ```
 
+- Web interface (MVP):
+
+  - `interbank.py` can run as a local web server with `--web`.
+  - Default values if omitted:
+    - `--web_mode dashboard`
+    - `--web_port 8080`
+  - Available modes:
+    - `simulate`: single execution UI.
+    - `multiple`: parameter multiple-run UI.
+    - `dashboard`: combined UI with tabs, includes charts for simulate/multiple.
+
+  ``` {.bash language="bash" basicstyle="\\ttfamily\\small"}
+  # dashboard mode (default) on port 8080:
+  python interbank.py --web
+
+  # explicit modes:
+  python interbank.py --web --web_mode simulate --web_port 8080
+  python interbank.py --web --web_mode multiple --web_port 8080
+  python interbank.py --web --web_mode dashboard --web_port 8080
+  ```
+
+  - In `dashboard`, chart metric visibility is selectable with checkboxes.
+  - Metric selections are persisted in browser `localStorage`.
+  - Backend routes:
+    - `POST /api/simulate` for single runs.
+    - `POST /api/multiple` for multiple parameter runs.
+  - Dashboard template file: `templates/template_simulation.html`.
+
 - `colab_interbank.ipynb`: Notebook version of the standalone
   `interbank.py` with the same results but plotted using Bokeh.
 
@@ -53,6 +81,9 @@
 - `exp_runner.py`: A prototype for executing experiments with different
   parameters and using MonteCarlo (using concurrent.futures to allow
   multiple threads).
+
+  - `OUTPUT_FORMAT` is configurable in `ExperimentRun` (default: `gdt`).
+  - Experiments now save only one results format according to `OUTPUT_FORMAT`.
 
 - `exp_runner_distributed.py`: A sub-prototype that uses ray library to
   execute in a cluster.
@@ -155,6 +186,14 @@ Different statistics can be obtained after running the model, either in
 **csv** output, or in **gdt** (Gretl format). This statistics collect
 data in each time for the average or individually, depending on the
 usage. Possible statistics obtained from the model are:
+
+- Output validity and auxiliary files:
+
+  - GDT description includes a validity line derived from equity-shape checks, for example:
+    - `Validity OK: finite values >=99%: 99.35%; std(diff)>0.25: 0.33; sign_change_ratio > 0.35: 0.36; near_zero_step_ratio < 0.04: 0.01`
+  - If `ir` contains `nan` in some periods, auxiliary filtered files are generated with only valid `ir` instants:
+    - `*_b.gdt` (and `*_b.csv` when CSV output is enabled)
+  - Auxiliary files include `real_t` to map each filtered row back to original time index.
 
 - **active_borrowers**: Number of banks that are involved in a loan as
   borrowers. Both values in global and **stats_market** will be the

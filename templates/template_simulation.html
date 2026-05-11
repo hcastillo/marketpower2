@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBTF Dashboard Analysis</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Segoe UI, Tahoma, sans-serif;
+    background: #f5f5f7;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .header {
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    padding: 12px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .header h1 {
+    font-size: 18px;
+    color: #1a1a2e;
+  }
+  .header h1 span { color: #7c3aed; }
+  .header .subtitle {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+  }
+  .app-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  .sidebar {
+    width: 320px;
+    min-width: 320px;
+    background: #f9fafb;
+    border-right: 1px solid #e5e7eb;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sidebar-section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .sidebar-section.tbtf-section { border-left: 3px solid #7c3aed; }
+  .sidebar-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  .param-row {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    gap: 6px;
+  }
+  .param-row label {
+    flex: 1;
+    font-size: 12px;
+    color: #555;
+    white-space: nowrap;
+  }
+  .param-row input {
+    width: 90px;
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: right;
+  }
+  .action {
+    margin-top: 8px;
+    padding: 10px;
+    background: #7c3aed;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+  .action:hover { background: #6d28d9; }
+  .action:disabled { background: #b4a0e5; cursor: wait; }
+  .status { font-size: 11px; color: #666; margin-top: 6px; min-height: 16px; }
+  .status.error { color: #dc2626; }
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    padding: 8px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: #888;
+    cursor: pointer;
+  }
+  .tab-btn:hover { color: #555; }
+  .tab-btn.active { color: #7c3aed; border-bottom-color: #7c3aed; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .stat-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .stat-card {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 140px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+  .stat-card .value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+  .stat-card .label {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+  }
+  .chart-panel {
+    background: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .chart-panel h3 {
+    font-size: 14px;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  pre {
+    background: #0f172a;
+    color: #d1d5db;
+    border-radius: 6px;
+    padding: 10px;
+    overflow: auto;
+    max-height: 520px;
+  }
+  .table-wrap {
+    margin-top: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    overflow: auto;
+    max-height: 280px;
+    background: #ffffff;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  th, td {
+    border: 1px solid #e5e7eb;
+    padding: 4px 6px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  th {
+    background: #f3f4f6;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    text-align: center;
+  }
+  .table-note {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #6b7280;
+  }
+  .table-toolbar {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .table-toolbar button {
+    background: #374151;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .table-toolbar span {
+    font-size: 12px;
+    color: #374151;
+  }
+  .plot-box {
+    width: 100%;
+    min-height: 340px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .metric-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #f8fafc;
+  }
+  .metric-selector label {
+    font-size: 12px;
+    color: #374151;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .metric-selector input[type="checkbox"] { accent-color: #7c3aed; }
+  details summary {
+    cursor: pointer;
+    color: #4b5563;
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .placeholder {
+    color: #aaa;
+    font-size: 13px;
+    text-align: center;
+    padding: 80px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+  <h1>Interbank <span>Dashboard</span></h1>
+  <div class="subtitle">Individual and multiple simulations</div>
+</div>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-section tbtf-section">
+      <div class="sidebar-title">Simulation</div>
+      <div class="param-row"><label>N</label><input id="sim-N" type="number" value="50" min="2" step="1"></div>
+      <div class="param-row"><label>T</label><input id="sim-T" type="number" value="300" min="1" step="1"></div>
+      <div class="param-row"><label>seed</label><input id="sim-seed" type="number" value="5" min="0" step="1"></div>
+      <div class="param-row"><label>p</label><input id="sim-p" type="number" value="0.8" min="0" max="1" step="0.01"></div>
+      <button class="action" id="run-sim">Run simulation</button>
+      <div class="status" id="sim-status"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Multiple</div>
+      <div class="param-row"><label>multiple_param</label><input id="multiple-param" type="text" value="p"></div>
+      <div class="param-row"><label>from</label><input id="multiple-from" type="number" value="0" step="0.1"></div>
+      <div class="param-row"><label>to</label><input id="multiple-to" type="number" value="1" step="0.1"></div>
+      <div class="param-row"><label>step</label><input id="multiple-step" type="number" value="0.1" step="0.01"></div>
+      <div class="param-row"><label>mc_seeds</label><input id="multiple-mc" type="number" value="3" min="1" step="1"></div>
+      <div class="param-row"><label>workers</label><input id="multiple-workers" type="number" value="4" min="1" step="1"></div>
+      <div class="param-row"><label>N</label><input id="multiple-N" type="number" value="50" min="2" step="1"></div>
+      <div class="param-row"><label>T</label><input id="multiple-T" type="number" value="300" min="1" step="1"></div>
+      <div class="param-row"><label>seed</label><input id="multiple-seed" type="number" value="5" min="0" step="1"></div>
+      <button class="action" id="run-multiple">Run multiple</button>
+      <div class="status" id="multiple-status"></div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="sim-panel">Simulation Output</button>
+      <button class="tab-btn" data-tab="multiple-panel">Multiple Output</button>
+    </div>
+
+    <section id="sim-panel" class="tab-panel active">
+      <div class="stat-cards" id="sim-cards">
+        <div class="stat-card"><span class="value">-</span><span class="label">Rows</span></div>
+        <div class="stat-card"><span class="value">-</span><span class="label">N</span></div>
+        <div class="stat-card"><span class="value">-</span><span class="label">T</span></div>
+      </div>
+      <div class="chart-panel">
+        <h3>Simulation Charts</h3>
+        <div id="sim-metric-selector" class="metric-selector"></div>
+        <div id="sim-chart" class="plot-box placeholder">Run a simulation to see charts</div>
+        <div id="sim-table" class="table-wrap"></div>
+        <div class="table-toolbar">
+          <button id="sim-table-prev" type="button">Prev 200</button>
+          <button id="sim-table-next" type="button">Next 200</button>
+          <span id="sim-table-page"></span>
+          <button id="sim-table-export" type="button">Export CSV</button>
+        </div>
+        <div id="sim-table-note" class="table-note"></div>
+        <details>
+          <summary>Show raw JSON</summary>
+          <pre id="sim-output" class="placeholder">Run a simulation to see output</pre>
+        </details>
+      </div>
+    </section>
+
+    <section id="multiple-panel" class="tab-panel">
+      <div class="stat-cards" id="multiple-cards">
+        <div class="stat-card"><span class="value">-</span><span class="label">Points</span></div>
+        <div class="stat-card"><span class="value">-</span><span class="label">MC Seeds</span></div>
+      </div>
+      <div class="chart-panel">
+        <h3>Multiple Charts</h3>
+        <div id="multiple-metric-selector" class="metric-selector"></div>
+        <div id="multiple-chart" class="plot-box placeholder">Run a multiple to see charts</div>
+        <div id="multiple-table" class="table-wrap"></div>
+        <div class="table-toolbar">
+          <button id="multiple-table-prev" type="button">Prev 200</button>
+          <button id="multiple-table-next" type="button">Next 200</button>
+          <span id="multiple-table-page"></span>
+          <button id="multiple-table-export" type="button">Export CSV</button>
+        </div>
+        <div id="multiple-table-note" class="table-note"></div>
+        <details>
+          <summary>Show raw JSON</summary>
+          <pre id="multiple-output" class="placeholder">Run a multiple to see output</pre>
+        </details>
+      </div>
+    </section>
+  </main>
+</div>
+
+  <script>
+    (function () {
+      const STORAGE_KEYS = {
+        simMetrics: "interbank_dashboard_sim_metrics",
+        multipleMetrics: "interbank_dashboard_multiple_metrics"
+      };
+
+      const tabButtons = document.querySelectorAll(".tab-btn");
+      const tabPanels = document.querySelectorAll(".tab-panel");
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        tabButtons.forEach((other) => other.classList.remove("active"));
+        tabPanels.forEach((panel) => panel.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(button.dataset.tab).classList.add("active");
+      });
+    });
+
+    function setStatus(id, text, isError) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      if (isError) {
+        el.classList.add("error");
+      } else {
+        el.classList.remove("error");
+      }
+    }
+
+    function renderTable(containerId, noteId, headers, rows, maxRows) {
+      const tableContainer = document.getElementById(containerId);
+      const noteContainer = document.getElementById(noteId);
+      const limitedRows = rows.slice(0, maxRows);
+      const thead = "<thead><tr>" + headers.map((header) => "<th>" + header + "</th>").join("") + "</tr></thead>";
+      const tbody = "<tbody>" + limitedRows.map((row) => "<tr>" + row.map((value) => "<td>" + value + "</td>").join("") + "</tr>").join("") + "</tbody>";
+      tableContainer.innerHTML = "<table>" + thead + tbody + "</table>";
+      noteContainer.textContent = rows.length > maxRows
+        ? "Showing first " + maxRows + " rows of " + rows.length + "."
+        : "Showing " + rows.length + " rows.";
+    }
+
+    function createTablePager(tableIdPrefix, filenamePrefix) {
+      const state = {
+        headers: [],
+        rows: [],
+        page: 0,
+        pageSize: 200,
+        filename: filenamePrefix
+      };
+      const prevButton = document.getElementById(tableIdPrefix + "-table-prev");
+      const nextButton = document.getElementById(tableIdPrefix + "-table-next");
+      const pageLabel = document.getElementById(tableIdPrefix + "-table-page");
+      const exportButton = document.getElementById(tableIdPrefix + "-table-export");
+
+      function csvCell(value) {
+        const text = value === null || value === undefined ? "" : String(value);
+        if (text.indexOf('"') >= 0 || text.indexOf(',') >= 0 || text.indexOf('\n') >= 0) {
+          return '"' + text.replace(/"/g, '""') + '"';
+        }
+        return text;
+      }
+
+      function exportCsv() {
+        if (!state.headers.length) {
+          return;
+        }
+        const lines = [];
+        lines.push(state.headers.map(csvCell).join(","));
+        state.rows.forEach((row) => {
+          lines.push(row.map(csvCell).join(","));
+        });
+        const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = state.filename + "_table.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }
+
+      function renderPage() {
+        const start = state.page * state.pageSize;
+        const end = start + state.pageSize;
+        const rows = state.rows.slice(start, end);
+        renderTable(
+          tableIdPrefix + "-table",
+          tableIdPrefix + "-table-note",
+          state.headers,
+          rows,
+          rows.length
+        );
+        const totalPages = Math.max(Math.ceil(state.rows.length / state.pageSize), 1);
+        pageLabel.textContent = "Page " + (state.page + 1) + " / " + totalPages;
+        prevButton.disabled = state.page === 0;
+        nextButton.disabled = state.page >= totalPages - 1;
+        exportButton.disabled = state.rows.length === 0;
+        const noteContainer = document.getElementById(tableIdPrefix + "-table-note");
+        noteContainer.textContent = state.rows.length
+          ? "Showing rows " + (start + 1) + "-" + Math.min(end, state.rows.length) + " of " + state.rows.length + "."
+          : "No table data available.";
+      }
+
+      prevButton.addEventListener("click", function () {
+        if (state.page > 0) {
+          state.page -= 1;
+          renderPage();
+        }
+      });
+      nextButton.addEventListener("click", function () {
+        const totalPages = Math.max(Math.ceil(state.rows.length / state.pageSize), 1);
+        if (state.page < totalPages - 1) {
+          state.page += 1;
+          renderPage();
+        }
+      });
+      exportButton.addEventListener("click", exportCsv);
+
+      return {
+        setData: function (headers, rows, filename) {
+          state.headers = headers;
+          state.rows = rows;
+          state.page = 0;
+          state.filename = filename || state.filename;
+          renderPage();
+        }
+      };
+    }
+
+    function selectedMetrics(containerId) {
+      return Array.from(document.querySelectorAll("#" + containerId + " input[type='checkbox']:checked"))
+        .map((checkbox) => checkbox.value);
+    }
+
+    function readStoredMetrics(storageKey) {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writeStoredMetrics(storageKey, values) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(values));
+      } catch (error) {
+      }
+    }
+
+    function ensureSelector(containerId, metricNames, preferredDefaults, storageKey, onChange) {
+      const container = document.getElementById(containerId);
+      const prevSelected = new Set(selectedMetrics(containerId));
+      const storedMetrics = readStoredMetrics(storageKey);
+      const storedSet = storedMetrics ? new Set(storedMetrics) : null;
+      container.innerHTML = "";
+
+      metricNames.forEach((metric) => {
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = metric;
+        let shouldSelect;
+        if (prevSelected.size) {
+          shouldSelect = prevSelected.has(metric);
+        } else if (storedSet) {
+          shouldSelect = storedSet.has(metric);
+        } else {
+          shouldSelect = preferredDefaults.includes(metric);
+        }
+        checkbox.checked = shouldSelect;
+        checkbox.addEventListener("change", function () {
+          writeStoredMetrics(storageKey, selectedMetrics(containerId));
+          onChange();
+        });
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(metric));
+        container.appendChild(label);
+      });
+
+      writeStoredMetrics(storageKey, selectedMetrics(containerId));
+    }
+
+    let lastSimData = null;
+    let lastMultipleData = null;
+    const simTablePager = createTablePager("sim", "dashboard_simulation");
+    const multipleTablePager = createTablePager("multiple", "dashboard_multiple");
+
+    function renderSimulationChart(data) {
+      lastSimData = data;
+      const chart = document.getElementById("sim-chart");
+      const preferred = ["equity", "ir", "bankruptcies", "liquidity", "deposits"];
+      ensureSelector(
+        "sim-metric-selector",
+        Object.keys(data.series || {}).sort(),
+        preferred,
+        STORAGE_KEYS.simMetrics,
+        function () {
+          if (lastSimData) renderSimulationChart(lastSimData);
+        }
+      );
+      const visible = new Set(selectedMetrics("sim-metric-selector"));
+      const orderedMetrics = [];
+      preferred.forEach((name) => {
+        if (visible.has(name) && data.series[name]) {
+          orderedMetrics.push(name);
+        }
+      });
+      Object.keys(data.series || {}).sort().forEach((name) => {
+        if (visible.has(name) && data.series[name] && !orderedMetrics.includes(name)) {
+          orderedMetrics.push(name);
+        }
+      });
+      const traces = [];
+      orderedMetrics.forEach((name) => {
+        traces.push({
+          x: data.time,
+          y: data.series[name],
+          mode: "lines",
+          name: name
+        });
+      });
+      if (traces.length === 0) {
+        chart.classList.add("placeholder");
+        chart.textContent = "Select at least one metric";
+        return;
+      }
+      chart.classList.remove("placeholder");
+      chart.textContent = "";
+      Plotly.newPlot("sim-chart", traces, {
+        margin: { t: 30, r: 20, b: 45, l: 55 },
+        title: "Simulation Time Series",
+        xaxis: { title: "t" },
+        yaxis: { title: "value" },
+        legend: { orientation: "h" }
+      }, { responsive: true, displaylogo: false });
+
+      const headers = ["t"].concat(orderedMetrics);
+      const rows = data.time.map((timeValue, index) => {
+        const row = [timeValue];
+        orderedMetrics.forEach((metric) => {
+          row.push(data.series[metric][index]);
+        });
+        return row;
+      });
+      simTablePager.setData(headers, rows, "dashboard_simulation");
+    }
+
+    function renderMultipleChart(data) {
+      lastMultipleData = data;
+      const chart = document.getElementById("multiple-chart");
+      const multipleMetrics = Object.keys(data.metrics || {}).sort();
+      ensureSelector(
+        "multiple-metric-selector",
+        multipleMetrics,
+        multipleMetrics,
+        STORAGE_KEYS.multipleMetrics,
+        function () {
+          if (lastMultipleData) renderMultipleChart(lastMultipleData);
+        }
+      );
+      const visible = new Set(selectedMetrics("multiple-metric-selector"));
+      const traces = [];
+      Object.keys(data.metrics || {}).forEach((metric) => {
+        if (!visible.has(metric)) return;
+        traces.push({
+          x: data.multiple_values,
+          y: data.metrics[metric],
+          mode: "lines+markers",
+          name: metric
+        });
+      });
+      if (traces.length === 0) {
+        chart.classList.add("placeholder");
+        chart.textContent = "Select at least one metric";
+        return;
+      }
+      chart.classList.remove("placeholder");
+      chart.textContent = "";
+      Plotly.newPlot("multiple-chart", traces, {
+        margin: { t: 30, r: 20, b: 45, l: 55 },
+        title: "Multiple Aggregated Metrics",
+        xaxis: { title: data.multiple_param || "parameter" },
+        yaxis: { title: "aggregated value" },
+        legend: { orientation: "h" }
+      }, { responsive: true, displaylogo: false });
+
+      const metricNames = Object.keys(data.metrics || {}).filter((metric) => visible.has(metric));
+      const headers = [data.multiple_param || "multiple_param"].concat(metricNames);
+      const rows = data.multiple_values.map((multipleValue, index) => {
+        const row = [multipleValue];
+        metricNames.forEach((metric) => {
+          row.push(data.metrics[metric][index]);
+        });
+        return row;
+      });
+      multipleTablePager.setData(headers, rows, "dashboard_multiple");
+    }
+
+    document.getElementById("run-sim").addEventListener("click", async function () {
+        const output = document.getElementById("sim-output");
+      const cards = document.querySelectorAll("#sim-cards .value");
+      const payload = {
+        N: Number(document.getElementById("sim-N").value),
+        T: Number(document.getElementById("sim-T").value),
+        seed: Number(document.getElementById("sim-seed").value),
+        p: Number(document.getElementById("sim-p").value)
+      };
+      setStatus("sim-status", "Running simulation...", false);
+        output.classList.remove("placeholder");
+        output.textContent = "{}";
+      try {
+        const response = await fetch("/api/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Simulation failed");
+        }
+        setStatus("sim-status", "OK", false);
+        output.textContent = JSON.stringify(data, null, 2);
+        renderSimulationChart(data);
+        cards[0].textContent = String(data.meta.rows);
+        cards[1].textContent = String(data.meta.N);
+        cards[2].textContent = String(data.meta.T);
+      } catch (error) {
+        setStatus("sim-status", "Error: " + error.message, true);
+      }
+    });
+
+    document.getElementById("run-multiple").addEventListener("click", async function () {
+      const output = document.getElementById("multiple-output");
+      const cards = document.querySelectorAll("#multiple-cards .value");
+      const payload = {
+        multiple_param: document.getElementById("multiple-param").value,
+        from: Number(document.getElementById("multiple-from").value),
+        to: Number(document.getElementById("multiple-to").value),
+        step: Number(document.getElementById("multiple-step").value),
+        mc_seeds: Number(document.getElementById("multiple-mc").value),
+        workers: Number(document.getElementById("multiple-workers").value),
+        metrics: ["bankruptcies", "equity", "ir"],
+        config: {
+          N: Number(document.getElementById("multiple-N").value),
+          T: Number(document.getElementById("multiple-T").value),
+          seed: Number(document.getElementById("multiple-seed").value)
+        }
+      };
+      setStatus("multiple-status", "Running multiple...", false);
+        output.classList.remove("placeholder");
+        output.textContent = "{}";
+      try {
+        const response = await fetch("/api/multiple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Multiple run failed");
+        }
+        setStatus("multiple-status", "OK", false);
+        output.textContent = JSON.stringify(data, null, 2);
+        renderMultipleChart(data);
+        cards[0].textContent = String(data.multiple_values.length);
+        cards[1].textContent = String(data.mc_seeds);
+      } catch (error) {
+        setStatus("multiple-status", "Error: " + error.message, true);
+      }
+    });
+  })();
+</script>
+</body>
+</html>

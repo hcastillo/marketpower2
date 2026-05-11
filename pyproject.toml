@@ -5,6 +5,7 @@ description = "econo-ml: Reinforce Learning Policy Recommendation for Interbank 
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "flask>=3.0.0",
     "lxml>=6.1.0",
     "matplotlib>=3.10.9",
     "networkx>=3.6.1",

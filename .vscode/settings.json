@@ -29,5 +29,6 @@
                 "pdflatex"
             ]
         }
-    ]
+    ],
+    "wolf.disableHotModeWarning": true
 }

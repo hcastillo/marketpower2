@@ -490,9 +490,8 @@ class Model:
                 self.rationing[i] = 0
                 self.C[i] -= rationing_we_have
                 if self.C[i] >= 0:  # if C>0 we have been saved
-                    self.log.debug("repayments", f"#{i} cancels "
-                                              f"rationing={self.log.format_number(rationing_we_have)} and still has C="
-                                              f"{self.log.format_number(self.C[i])}")
+                    self.log.debug("repayments", f"#{i} cancels rationing={self.log.format_number(rationing_we_have)} "
+                        f"and still has C={self.log.format_number(self.C[i])}")
                 else:
                     if self.config.allow_use_of_L_to_pay_rationing:
                         self.E[i] += self.C[i]
@@ -511,8 +510,8 @@ class Model:
                 self.C[i] -= amount_we_need
                 if self.C[i] >= 0:
                     self.log.debug("repayments", f"#{i} cancels "
-                                                 f"d={self.log.format_number(amount_we_need)} and still has "
-                                                 f"{self.log.format_number(self.C[i])}")
+                        f"d={self.log.format_number(amount_we_need)} and still has "
+                        f"{self.log.format_number(self.C[i])}")
                 else: 
                     self.E[i] += self.C[i]
                     self.L[i] += self.C[i]
@@ -549,8 +548,8 @@ class Model:
                         self.E[self.lenders[i]] += really_paid
                         profits_paid += really_paid
                         self.log.debug("repayments", f"#{i} pays partially loan+interests to #{self.lenders[i]} "
-                                                     f"loan={self.log.format_number(amount_of_loan)} and "
-                                                     f"interests={self.log.format_number(really_paid)} and fails")
+                            f"loan={self.log.format_number(amount_of_loan)} and "
+                            f"interests={self.log.format_number(really_paid)} and fails")
                         continue
                     else:
                         # all the interest is paid to the lender:
@@ -558,8 +557,8 @@ class Model:
                         self.E[self.lenders[i]] += interest_to_payback
                         profits_paid += interest_to_payback
                         self.log.debug("repayments", f"#{i} pays loan+interests to #{self.lenders[i]} "
-                                                     f"loan={self.log.format_number(amount_of_loan)} and "
-                                                     f"interests={self.log.format_number(interest_to_payback)}")
+                            f"loan={self.log.format_number(amount_of_loan)} and "
+                            f"interests={self.log.format_number(interest_to_payback)}")
                 self.check_if_bank_fails(i, "pay interests")
         return profits_paid
 
@@ -574,22 +573,6 @@ class Model:
         self.failed[i] = 0
 
     def replace_failed_banks(self):
-        # surviving = self.failed != 1
-        # num_surviving = np.sum(surviving)
-        # if num_surviving == 0:
-        #     return
-        
-        # def mode(data):
-        #     unique_vals = np.unique(data)
-        #     if len(unique_vals) == 0:
-        #         return 0.0
-        #     values, counts = np.unique(data, return_counts=True)
-        #     return values[np.argmax(counts)]
-        
-        # mode_c = mode(self.C[surviving])
-        # mode_d = mode(self.D[surviving])
-        # mode_e = mode(self.E[surviving])
-        
         for i in range(self.config.N):
             if self.failed[i] == 1:
                 self.init_bank(i)
@@ -656,10 +639,23 @@ class Model:
                             help='File extension for data (gdt,txt,csv,both)')
         parser.add_argument('--output', type=str, default=None,
                             help='Directory where to store the results')
+        parser.add_argument('--web', action='store_true', default=False,
+                            help='Run web server instead of CLI simulation')
+        parser.add_argument('--web_mode', type=str, default='dashboard',
+                            choices=['simulate', 'multiple', 'dashboard'],
+                            help='Web mode to start')
+        parser.add_argument('--web_port', type=int, default=8080,
+                            help='Port for web server')
         parser.add_argument('--no_replace', action='store_true',
                             default=not self.config.allow_replacement_of_bankrupted,
                             help='No replace banks when they go bankrupted')
         args, other_possible_config_args = parser.parse_known_args()
+        if args.web:
+            from interbank_web import create_app
+
+            app = create_app(args.web_mode)
+            app.run(host='127.0.0.1', port=args.web_port, debug=False)
+            return
         self.config.allow_replacement_of_bankrupted = not args.no_replace
         self.config.define_values_from_args(other_possible_config_args)
         self.log.define_log(args.log, args.logfile)
