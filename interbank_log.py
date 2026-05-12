@@ -55,9 +55,10 @@ class Log:
         if i<self.model.config.N:
             result =f"bank#{i}{message} C={format_value(i,"C")} L={format_value(i,"L")} R={format_value(i,"R")} |" +\
                     f" D={format_value(i,"D")} E={format_value(i,"E")} "
-            if self.model.varD1[i]<0 or self.model.varD2[i]<0 or self.model.d[i]<0:
+            if self.model.varD1[i]<0 or self.model.varD2[i]<0:
                 result += f" d={format_value(i, "d")}"
-                #          f"{'lender=' + str(self.model.lenders[i]) if self.model.lenders[i] >= 0 else ''}")
+                if self.model.d2[i]>0:
+                    result += f" d2={format_value(i, "d2")}"
                 if self.model.prob_bankruptcy[i]>=0:
                     result +=f" p={format_value(i,"prob_bankruptcy")} "
                 if self.model.leverage[i]>=0:
@@ -75,6 +76,8 @@ class Log:
             else:
                 if self.model.s[i]>0:
                     result +=f" s={format_value(i,"s")}"
+                if self.model.loaned[i]>0:
+                    result +=f" loans={format_value(i,"loaned")}"
                 if self.model.psi[i]>=0:
                     result += f" ψ={format_value(i,"psi")}"
                 if self.model.bad_debt[i]>=0:

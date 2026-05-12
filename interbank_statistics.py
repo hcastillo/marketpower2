@@ -37,6 +37,7 @@ class Statistics:
         self.loans = []
         self.psi = []
         self.bankruptcies = []
+        self.bankruptcy_rationed = []
         self.ir = []
         self.ir_avg = []
         self.var_D1 = []
@@ -56,6 +57,8 @@ class Statistics:
         self.equity = []
         self.profits = []
         self.correlation = []
+        self.initial_N = []
+        self.num_banks = []
 
     # ---------------------------------------------------------------------------
     # Cross-correlation: psi vs other variables
@@ -138,7 +141,7 @@ class Statistics:
         result = pd.DataFrame()
         if not self.model.log.interactive:
             for element_name, element in self.enumerate_time_series_results():
-                result[element_name] = element
+                result[element_name] = pd.Series(element)
         return result
 
     def enumerate_results(self):
@@ -206,7 +209,7 @@ class Statistics:
         variables = xml_variables(count=f'{num_variables}')
         header_text = '\n'.join(header)
         if selected_indices is None:
-            selected_indices = list(range(self.model.config.T))
+            selected_indices = list(range(self.get_observation_count()))
 
         next_variable_index = 1
         if include_real_t:
@@ -235,7 +238,7 @@ class Statistics:
                 else:
                     if variable_name not in warned_short_variables:
                         warnings.warn(
-                            f"'{variable_name}' shorter than expected ({len(observations)}<{self.model.config.T}); filling with nan.",
+                            f"'{variable_name}' shorter than expected ({len(observations)}<{len(selected_indices)}); filling with nan.",
                             RuntimeWarning,
                         )
                         warned_short_variables.add(variable_name)
@@ -252,10 +255,11 @@ class Statistics:
     def save_auxiliary_file_with_valid_ir(self, export_datafile, header):
         if len(self.ir) < 2:
             return
+        observation_count = self.get_observation_count()
         valid_ir_indices = [
-            index for index in range(min(self.model.config.T, len(self.ir))) if np.isfinite(self.ir[index])
+            index for index in range(min(observation_count, len(self.ir))) if np.isfinite(self.ir[index])
         ]
-        if len(valid_ir_indices) == self.model.config.T:
+        if len(valid_ir_indices) == observation_count:
             return
         if len(valid_ir_indices) < 2:
             return
@@ -269,7 +273,7 @@ class Statistics:
                                                                                        len(header) + 1, delimiter)
         data_series = list(self.enumerate_time_series_results())
         if selected_indices is None:
-            selected_indices = list(range(self.model.config.T))
+            selected_indices = list(range(self.get_observation_count()))
         with open(filename, 'w', encoding='utf-8') as save_file:
             save_file.write(file_header)
             if include_real_t:
@@ -290,7 +294,7 @@ class Statistics:
                     else:
                         if name_element not in warned_short_variables:
                             warnings.warn(
-                                f"'{name_element}' shorter than expected ({len(element)}<{self.model.config.T}); filling with nan.",
+                                f"'{name_element}' shorter than expected ({len(element)}<{len(selected_indices)}); filling with nan.",
                                 RuntimeWarning,
                             )
                             warned_short_variables.add(name_element)
@@ -401,11 +405,19 @@ class Statistics:
                 print('Invalid output file format: {}'.format(output_format))
                 sys.exit(-1)
 
+    def get_observation_count(self):
+        if self.num_banks:
+            return len(self.num_banks)
+        lengths = [len(element_values) for _, element_values in self.enumerate_time_series_results()]
+        return max(lengths) if lengths else self.model.config.T
+
     def compute_psi(self):
         self.psi.append( np.nanmean(self.model.psi) )
 
     def compute_bankruptcies(self):
         self.bankruptcies.append(np.nansum(self.model.failed))
+        failed_with_rationing = np.logical_and(self.model.failed > 0, self.model.was_rationed)
+        self.bankruptcy_rationed.append(np.nansum(failed_with_rationing))
 
     def compute_d1(self):
         self.d1.append(np.nansum(self.model.d))
@@ -471,4 +483,8 @@ class Statistics:
 
     def compute_prob_bankruptcy(self):
         self.prob_bankruptcy.append(1 - np.nanmean(self.model.prob_bankruptcy))
+
+    def compute_num_banks(self):
+        self.initial_N.append(self.model.initial_N)
+        self.num_banks.append(self.model.config.N)
 

@@ -40,7 +40,7 @@ class Config:
     # shocks parameters: mi=0.7 omega=0.6 for perfect balance
     # less omega, more negative is the shock
     mu: float = 0.7  # mi µ
-    #TODO 0.6 perfect simmetrical shock, 0.5 es eagerly negative shock    
+    # 0.6 perfect symmetrical shock, 0.5 es eagerly negative shock    
     omega: float = 0.55 # omega ω   
 
     # banks initial parameters
@@ -56,17 +56,16 @@ class Config:
     # maximum interest rate that can be applied to a loan (to avoid infinite rates when bankruptcy probability is 0 or psi=1)
     max_interest_rate: float = 1
 
-    #TODO
     # if false when a bank dies it's not replaced:
     allow_replacement_of_bankrupted : bool = True
     allow_use_of_L_to_pay_rationing : bool = True
 
-    def __init__(self, T:int=None, N:int=None, seed:int=None):
-        if T:
+    def __init__(self, T:int=-1, N:int=-1, seed:int=-1):
+        if T>-1:
             self.T = T
-        if N:
+        if N>-1:
             self.N = N
-        if seed:
+        if seed>-1:
             self.seed = seed
 
     def __str__(self, separator=''):
@@ -135,7 +134,7 @@ class Config:
                             setattr(self, name_config, float(value_config))
                     except ValueError:
                         print(current_value, type(current_value), isinstance(current_value, bool),
-                              isinstance(current_value, int))
+                            isinstance(current_value, int))
                         logging.error('Value given for {} is not valid: {}'.format(name_config, value_config))
                         sys.exit(-1)
                     if name_config == 'psi':
@@ -152,8 +151,9 @@ class Model:
     """
     export_datafile = None
 
-    def __init__(self, T:int=None, N:int=None, seed:int=None):
+    def __init__(self, T:int=-1, N:int=-1, seed:int=-1):
         self.config = Config(T, N, seed)
+        self.initial_N = self.config.N
         self.stats = Stats(self)
         self.log = Log(self)
         self.lenderchange = lc.LenderChange(self)
@@ -161,8 +161,8 @@ class Model:
 
     def configure_json(self, json_string: str):
         json_string = (json_string.strip().
-                       replace('=', ':').replace(' ', ', ').
-                       replace('True', 'true').replace('False', 'false'))
+            replace('=', ':').replace(' ', ', ').
+            replace('True', 'true').replace('False', 'false'))
         if not json_string.startswith('{'):
             json_string = '{' + json_string
         if not json_string.endswith('}'):
@@ -191,8 +191,8 @@ class Model:
 
     def init(self):
         self.t = 0
+        self.initial_N = self.config.N
         self.C = np.zeros(self.config.N, dtype=float)
-        self.bad_debt = np.zeros(self.config.N, dtype=float)
         self.failed = np.zeros(self.config.N, dtype=int)
         self.D = np.zeros(self.config.N, dtype=float)
         self.varD1 = np.zeros(self.config.N, dtype=float)
@@ -201,10 +201,7 @@ class Model:
         self.L = np.zeros(self.config.N, dtype=float)
         self.R = np.zeros(self.config.N, dtype=float)
         self.s = np.zeros(self.config.N, dtype=float)
-        self.d = np.zeros(self.config.N, dtype=float)
         self.lenders = np.zeros(self.config.N, dtype=int)
-        self.l = np.zeros(self.config.N, dtype=float)
-        self.rationing = np.zeros(self.config.N, dtype=float)
         self.prob_bankruptcy = np.zeros(self.config.N, dtype=float)
         self.leverage = np.zeros(self.config.N, dtype=float)
         self.haircut = np.zeros(self.config.N, dtype=float)
@@ -220,6 +217,48 @@ class Model:
         for i in range(self.config.N):
             self.init_bank(i)
         self.stats.init()
+
+    def compact_bank_state(self, alive_mask):
+        bank_vectors = [
+            "C",
+            "bad_debt",
+            "failed",
+            "D",
+            "varD1",
+            "varD2",
+            "E",
+            "L",
+            "R",
+            "s",
+            "d",
+            "lenders",
+            "l",
+            "rationing",
+            "was_rationed",
+            "prob_bankruptcy",
+            "leverage",
+            "haircut",
+            "capacity",
+            "interest_rate",
+            "psi",
+        ]
+        for attr in bank_vectors:
+            values = getattr(self, attr)
+            setattr(self, attr, values[alive_mask])
+
+        if hasattr(self, "d2"):
+            self.d2 = self.d2[alive_mask]
+
+        previous_indices = np.where(alive_mask)[0]
+        index_map = {old_index: new_index for new_index, old_index in enumerate(previous_indices)}
+        remapped_lenders = np.full(len(previous_indices), -1, dtype=int)
+        for new_bank, old_bank in enumerate(previous_indices):
+            old_lender = int(self.lenders[new_bank])
+            remapped_lenders[new_bank] = index_map.get(old_lender, -1)
+        self.lenders = remapped_lenders
+
+        self.failed[:] = 0
+        self.config.N = len(previous_indices)
 
     def finish(self):
         return self.stats.finish()
@@ -237,11 +276,10 @@ class Model:
         else:
             self.varD2 = shock_values
             newD = self.D + self.varD2
+        newD[ newD<0 ] = 0
         newR = self.config.reserves * newD
         varR = newR - self.R
         self.D = newD
-        self.log.debug("shock2", f"ΔD={self.log.format_number(self.varD2)}")
-
         self.C += self.varD2 - varR
         self.R = newR
 
@@ -253,7 +291,7 @@ class Model:
         self.s2 = np.where( self.C>=0, self.C, 0)
         # and C<0 is impossible: those are zero now:
         self.C[ self.C<0 ] = 0
-        self.R[ self.C<0 ] = 0
+        # self.R[ self.C<0 ] = 0
 
 
         # for i in range(self.config.N):
@@ -414,21 +452,23 @@ class Model:
                     #
                     # borrower:
                     string_result += (f"s>=c ({self.log.format_number(self.s[ self.lenders[i]])}>"
-                                      f"{self.log.format_number(self.capacity[i])}) ")
+                            f"{self.log.format_number(self.capacity[i])}) ")
                     self.l[i] = self.capacity[i]
                     self.rationing[i] = self.d[i] -  self.capacity[i]
                     total_rationed += self.rationing[i]
                     num_of_rationed += 1
                     # lender:
-                    self.C[ self.lenders[i]] -= self.capacity[i]
-                    self.s[ self.lenders[i]] -= self.capacity[i]
+                    self.C[self.lenders[i]] -= self.capacity[i]
+                    self.s[self.lenders[i]] -= self.capacity[i]
+                    self.loaned[self.lenders[i]] += self.capacity[i]
                 elif self.lenders[i] != -1 and self.s[self.lenders[i]] < self.capacity[i]:
                     # borrower:
                     string_result += (f"s<c ({self.log.format_number(self.s[ self.lenders[i]])}>"
-                                      f"{self.log.format_number(self.capacity[i])}) ")
+                        f"{self.log.format_number(self.capacity[i])}) ")
                     self.l[i] = self.s[self.lenders[i]]
                     self.rationing[i] = self.d[i] - self.s[self.lenders[i]]
                     # lender:
+                    self.loaned[self.lenders[i]] += self.s[self.lenders[i]]
                     self.C[self.lenders[i]] = 0
                     self.s[self.lenders[i]] = 0
                 else:
@@ -440,7 +480,8 @@ class Model:
                     num_of_rationed += 1
                     string_result += f" rationed={self.log.format_number(self.rationing[i])},"
                 if self.lenders[i] != -1:
-                    self.log.debug("loans ", f"{string_result}l={self.capacity[i]},"
+                    self.log.debug("loans ", f"{string_result}l={self.log.format_number(self.capacity[i])},"
+                                            f" from #{self.lenders[i]} "
                                             f"lender.C={self.log.format_number(self.C[self.lenders[i]])},"
                                             f"lender.s={self.log.format_number(self.s[self.lenders[i]])}")
                 else:
@@ -466,10 +507,10 @@ class Model:
                     paid_loan = amount_of_loan
                     interests = min( self.interest_rate[bank] * amount_of_loan, recovered_with_L-amount_of_loan )
                 self.log.debug("repayments", f"#{bank} uses L to pay {reason} and fails, "
-                                             f"#{self.lenders[bank]} "
-                                             f"bad_debt={self.log.format_number(bad_debt)},"
-                                             f"interests={self.log.format_number(interests)},"
-                                             f"paid={self.log.format_number(paid_loan)},")
+                    f"#{self.lenders[bank]} "
+                    f"bad_debt={self.log.format_number(bad_debt)},"
+                    f"interests={self.log.format_number(interests)},"
+                    f"paid={self.log.format_number(paid_loan)},")
                 self.C[self.lenders[bank]] += paid_loan
                 self.C[self.lenders[bank]] += interests
                 self.E[self.lenders[bank]] += interests
@@ -488,6 +529,7 @@ class Model:
             if self.rationing[i] > 0:
                 rationing_we_have = self.rationing[i]
                 self.rationing[i] = 0
+                self.was_rationed[i] = True
                 self.C[i] -= rationing_we_have
                 if self.C[i] >= 0:  # if C>0 we have been saved
                     self.log.debug("repayments", f"#{i} cancels rationing={self.log.format_number(rationing_we_have)} "
@@ -523,6 +565,7 @@ class Model:
             if self.l[i] > 0:
                 amount_of_loan = self.l[i]
                 self.C[i] -= amount_of_loan
+                self.loaned[self.lenders[i]] -= amount_of_loan
                 if self.C[i] < 0:
                     # we use L to pay back also the loan if not enough:
                     self.E[i] += self.C[i]
@@ -573,6 +616,16 @@ class Model:
         self.failed[i] = 0
 
     def replace_failed_banks(self):
+        if not self.config.allow_replacement_of_bankrupted:
+            if self.config.N == 0:
+                return
+            alive_mask = self.failed == 0
+            if np.all(alive_mask):
+                self.failed[:] = 0
+                return
+            self.compact_bank_state(alive_mask)
+            return
+
         for i in range(self.config.N):
             if self.failed[i] == 1:
                 self.init_bank(i)
@@ -582,12 +635,17 @@ class Model:
         self.t = t
         self.l = np.zeros(self.config.N)
         self.bad_debt = np.zeros(self.config.N)
+        self.d2 = np.zeros(self.config.N)
+        self.rationing = np.zeros(self.config.N)
+        self.d = np.zeros(self.config.N)
+        self.loaned = np.zeros(self.config.N)
+        self.was_rationed = np.zeros(self.config.N, dtype=bool)
         
     def run(self):
         self.init()
-        self.log.debug_banks()
         for t in range(self.config.T):
             self.init_step(t)
+            self.log.debug_banks()
             self.do_shock1()
             self.stats.compute_d1()
             self.stats.compute_potential_lenders()
@@ -611,13 +669,15 @@ class Model:
             self.stats.compute_profits(profits_paid)
             self.stats.compute_bankruptcies()
             self.replace_failed_banks()
+            self.stats.compute_num_banks()
             self.stats.compute_liquidity()
             self.stats.compute_deposits()
             self.stats.compute_reserves()
             self.stats.compute_bad_debt()
             self.stats.compute_equity()
-            self.log.debug_banks()
             self.log.next()
+            if self.config.N <= 2:
+                break
             #for i in range(self.config.N):
             #    if self.capacity[i]>0 and (self.banks_d[i]-self.capacity[i])<=0:
             #        print(f"{i} c={self.capacity[i]} d={self.banks_d[i]}")

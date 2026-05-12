@@ -67,7 +67,8 @@ class InterbankTest(unittest.TestCase):
 
     def assertBank(self, bank: int, C: float = None, L: float = None, R: float = None, D: float = None,
                    E: float = None, l: float = None, s: float = None, rationing: float = None,
-                   bad_debt: float = None, failed: bool = False, lender: int = None):
+                   bad_debt: float = None, failed: bool = False, lender: int = None, d: float = None, 
+                   d2: float = None):
         if L is not None:
             self.assertEqual(round(self.model.bank(bank,"L"),8), L)
         if E is not None:
@@ -90,3 +91,7 @@ class InterbankTest(unittest.TestCase):
             self.assertEqual(round(self.model.bank(bank, "failed"),8), failed)
         if lender is not None:
             self.assertEqual(round(self.model.bank(bank, "lenders"),8), lender)
+        if d is not None:
+            self.assertEqual(round(self.model.bank(bank, "d"),8), d)
+        if d2 is not None:
+            self.assertEqual(round(self.model.bank(bank, "d2"),8), d2)
