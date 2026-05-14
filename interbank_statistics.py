@@ -58,6 +58,7 @@ class Statistics:
         self.profits = []
         self.correlation = []
         self.initial_N = []
+        self.Ninitial = []
         self.num_banks = []
 
     # ---------------------------------------------------------------------------
@@ -486,5 +487,5 @@ class Statistics:
 
     def compute_num_banks(self):
         self.initial_N.append(self.model.initial_N)
+        self.Ninitial.append(self.model.initial_N)
         self.num_banks.append(self.model.config.N)
-

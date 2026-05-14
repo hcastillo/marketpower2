@@ -15,6 +15,7 @@ class InterbankTest(unittest.TestCase):
         self.model.log.define_log(log='DEBUG', model_name=model_name)
         self.model.log.interactive = False
         self.model.init()
+        self.model.init_step(0)
 
     def setShock1(self, bank:int = None, shock: float = None, shocks: np.ndarray = None):
         if shocks is None:

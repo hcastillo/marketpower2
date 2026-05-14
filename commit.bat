@@ -1,6 +1,8 @@
 @echo off
 
-python -m unittest discover -s tests
+pytest tests/ --durations=0 -q --tb=no
+
+rem python -m unittest discover -s tests
 if %errorlevel%==0 (
  cd doc
  pdflatex algorithm.tex

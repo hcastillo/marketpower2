@@ -154,6 +154,7 @@ class Model:
     def __init__(self, T:int=-1, N:int=-1, seed:int=-1):
         self.config = Config(T, N, seed)
         self.initial_N = self.config.N
+        self.Ninitial = self.config.N
         self.stats = Stats(self)
         self.log = Log(self)
         self.lenderchange = lc.LenderChange(self)
@@ -192,7 +193,9 @@ class Model:
     def init(self):
         self.t = 0
         self.initial_N = self.config.N
+        self.Ninitial = self.config.N
         self.C = np.zeros(self.config.N, dtype=float)
+        self.bad_debt = np.zeros(self.config.N, dtype=float)
         self.failed = np.zeros(self.config.N, dtype=int)
         self.D = np.zeros(self.config.N, dtype=float)
         self.varD1 = np.zeros(self.config.N, dtype=float)
@@ -201,7 +204,13 @@ class Model:
         self.L = np.zeros(self.config.N, dtype=float)
         self.R = np.zeros(self.config.N, dtype=float)
         self.s = np.zeros(self.config.N, dtype=float)
+        self.d = np.zeros(self.config.N, dtype=float)
         self.lenders = np.zeros(self.config.N, dtype=int)
+        self.l = np.zeros(self.config.N, dtype=float)
+        self.d2 = np.zeros(self.config.N, dtype=float)
+        self.rationing = np.zeros(self.config.N, dtype=float)
+        self.loaned = np.zeros(self.config.N, dtype=float)
+        self.was_rationed = np.zeros(self.config.N, dtype=bool)
         self.prob_bankruptcy = np.zeros(self.config.N, dtype=float)
         self.leverage = np.zeros(self.config.N, dtype=float)
         self.haircut = np.zeros(self.config.N, dtype=float)
