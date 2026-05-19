@@ -140,10 +140,19 @@ class ExperimentRun:
             plot_x_values.append(array_with_x_values[j] if (j % ExperimentRun.XTICKS_DIVISOR == 0) else " ")
         if plot_x_values:
             plot_x_values[-1] = array_with_x_values[-1]
-        if self.XTICKS_SCALED:
+        if self.XTICKS_SCALED and self.NAME_OF_X_SERIES:
             try:
-                x_scaled = [float(x.split("=")[1]) for x in array_with_x_values]
+                prefix = self.NAME_OF_X_SERIES + "="
+                x_scaled = []
+                for x in array_with_x_values:
+                    idx = x.rfind(prefix)
+                    if idx >= 0:
+                        remainder = x[idx + len(prefix):].split()[0]
+                        x_scaled.append(float(remainder))
+                    else:
+                        x_scaled.append(float(x.split("=")[-1].split()[0]))
                 array_with_x_values = x_scaled
+                plot_x_values = [f"{v:g}" for v in x_scaled]
             except Exception:
                 pass
         for i in array_with_data:
@@ -166,7 +175,10 @@ class ExperimentRun:
             fig, ax = plt.subplots()
             title = f"{i}"
             if not self.DESCRIPTION_TITLE:
-                title += f" x={title_x} MC={self.MC}"
+                if self.NAME_OF_X_SERIES and self.XTICKS_SCALED:
+                    title += f" vs {self.NAME_OF_X_SERIES} MC={self.MC}"
+                else:
+                    title += f" x={title_x} MC={self.MC}"
             else:
                 title += f" {self.DESCRIPTION_TITLE}"
 
@@ -207,8 +219,11 @@ class ExperimentRun:
                         logarithm_plot = True
 
             plt.title(title + (" (log)" if logarithm_plot else ""))
-            ax.set_xticks(array_with_x_values)
-            ax.set_xticklabels(plot_x_values, rotation=270, fontsize=5)
+            if self.XTICKS_SCALED and self.NAME_OF_X_SERIES:
+                pass
+            else:
+                ax.set_xticks(array_with_x_values)
+                ax.set_xticklabels(plot_x_values, rotation=270, fontsize=5)
             if array_comparing:
                 plt.legend(loc="best")
             plt.savefig(f"{directory}{i}.png", dpi=300)
@@ -352,7 +367,13 @@ class ExperimentRun:
         return len(list(self.get_models(self.parameters))) * len(list(self.get_models(self.config)))
 
     def get_models(self, parameters):
-        return (dict(zip(parameters.keys(), values)) for values in sorted(product(*parameters.values())))
+        normalized_values = []
+        for value in parameters.values():
+            if isinstance(value, (list, tuple, range, np.ndarray)):
+                normalized_values.append(value)
+            else:
+                normalized_values.append([value])
+        return (dict(zip(parameters.keys(), values)) for values in sorted(product(*normalized_values)))
 
     def __filename_clean(self, value, max_length):
         value = str(value).replace("np.float64(", "").replace("np.float(", "")

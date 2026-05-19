@@ -59,6 +59,16 @@ class Config:
     # if false when a bank dies it's not replaced:
     allow_replacement_of_bankrupted : bool = True
     allow_use_of_L_to_pay_rationing : bool = True
+    NORMALIZE_IR_RANGE_01: float = 1.0
+    NORMALIZE_IR_RANGE_03: float = 3.0
+    normalize_ir_range_max: float = NORMALIZE_IR_RANGE_01
+    normalize_ir: bool = False
+    sqrt_ir: bool = False
+    robust_ir: bool = False
+    ROBUST_IR_QUANTILE_LOW: float = 5.0
+    ROBUST_IR_QUANTILE_HIGH: float = 95.0
+    robust_ir_quantile_low: float = ROBUST_IR_QUANTILE_LOW
+    robust_ir_quantile_high: float = ROBUST_IR_QUANTILE_HIGH
 
     def __init__(self, T:int=-1, N:int=-1, seed:int=-1):
         if T>-1:
@@ -370,6 +380,12 @@ class Model:
         #             self.C[i] = 0
 
     def do_interest_rate(self):
+        selected_ir_transformations = (
+            int(self.config.normalize_ir) + int(self.config.sqrt_ir) + int(self.config.robust_ir)
+        )
+        if selected_ir_transformations > 1:
+            raise ValueError("normalize_ir, sqrt_ir and robust_ir are mutually exclusive")
+
         #TODO we can estimate prob bankruptcy for each borrower counting only its possible lenders
         #     more heterogeneous 
 
@@ -439,6 +455,47 @@ class Model:
                     self.interest_rate[i] = self.config.m / denominator
             else:
                 self.interest_rate[i] = np.nan
+
+        if self.config.normalize_ir:
+            finite_mask = np.isfinite(self.interest_rate)
+            if np.any(finite_mask):
+                min_ir = np.min(self.interest_rate[finite_mask])
+                max_ir = np.max(self.interest_rate[finite_mask])
+                normalize_ir_range_max = self.config.normalize_ir_range_max
+                if normalize_ir_range_max <= 0:
+                    raise ValueError("normalize_ir_range_max must be greater than 0")
+                if max_ir > min_ir:
+                    self.interest_rate[finite_mask] = (
+                        ((self.interest_rate[finite_mask] - min_ir) / (max_ir - min_ir)) * normalize_ir_range_max
+                    )
+                else:
+                    self.interest_rate[finite_mask] = 0.0
+        elif self.config.sqrt_ir:
+            finite_mask = np.isfinite(self.interest_rate)
+            non_negative_mask = finite_mask & (self.interest_rate >= 0)
+            self.interest_rate[non_negative_mask] = np.sqrt(self.interest_rate[non_negative_mask])
+            self.interest_rate[finite_mask & (self.interest_rate < 0)] = np.nan
+        elif self.config.robust_ir:
+            finite_mask = np.isfinite(self.interest_rate)
+            if np.any(finite_mask):
+                finite_values = self.interest_rate[finite_mask]
+                normalize_ir_range_max = self.config.normalize_ir_range_max
+                if normalize_ir_range_max <= 0:
+                    raise ValueError("normalize_ir_range_max must be greater than 0")
+
+                q_low = float(self.config.robust_ir_quantile_low)
+                q_high = float(self.config.robust_ir_quantile_high)
+                if q_low < 0 or q_high > 100 or q_low >= q_high:
+                    raise ValueError("robust_ir quantiles must satisfy 0 <= low < high <= 100")
+
+                low_value = np.percentile(finite_values, q_low)
+                high_value = np.percentile(finite_values, q_high)
+                if high_value > low_value:
+                    clipped = np.clip(finite_values, low_value, high_value)
+                    transformed = (clipped - low_value) / (high_value - low_value)
+                    self.interest_rate[finite_mask] = transformed * normalize_ir_range_max
+                else:
+                    self.interest_rate[finite_mask] = 0.0
 
 
     def do_loans(self):
@@ -718,6 +775,16 @@ class Model:
         parser.add_argument('--no_replace', action='store_true',
                             default=not self.config.allow_replacement_of_bankrupted,
                             help='No replace banks when they go bankrupted')
+        ir_group = parser.add_mutually_exclusive_group()
+        ir_group.add_argument('--normalize_ir', action='store_true',
+                              default=self.config.normalize_ir,
+                              help='Normalize interest rates to [0,1] in each step')
+        ir_group.add_argument('--sqrt_ir', action='store_true',
+                              default=self.config.sqrt_ir,
+                              help='Apply square root transform to interest rates in each step')
+        ir_group.add_argument('--robust_ir', action='store_true',
+                              default=self.config.robust_ir,
+                              help='Apply robust scaler transform to interest rates in each step')
         args, other_possible_config_args = parser.parse_known_args()
         if args.web:
             from interbank_web import create_app
@@ -726,7 +793,15 @@ class Model:
             app.run(host='127.0.0.1', port=args.web_port, debug=False)
             return
         self.config.allow_replacement_of_bankrupted = not args.no_replace
+        self.config.normalize_ir = args.normalize_ir
+        self.config.sqrt_ir = args.sqrt_ir
+        self.config.robust_ir = args.robust_ir
         self.config.define_values_from_args(other_possible_config_args)
+        selected_ir_transformations = (
+            int(self.config.normalize_ir) + int(self.config.sqrt_ir) + int(self.config.robust_ir)
+        )
+        if selected_ir_transformations > 1:
+            parser.error("--normalize_ir, --sqrt_ir and --robust_ir are mutually exclusive")
         self.log.define_log(args.log, args.logfile)
         self.stats.define_output_format(args.output_format)
         self.stats.define_output_directory(args.output)

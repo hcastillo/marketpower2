@@ -8,11 +8,11 @@
 \usepackage{graphicx}
 \usepackage{pdfpages}
 \usepackage{amsopn}
+\usepackage{amsmath}
 
-
-\title{econo-ml: Reinforce Learning Policy Recommendation for Interbank Network Stability}
-\author{}
-\date{}
+\title{marketpower2: An Interbank model with change of lender mechanism}
+\author{Héctor Castillo Andreu}
+\date{May 2026}
 
 \begin{document}
 
@@ -31,7 +31,7 @@
         \item It accepts command line options. For instance:
             \begin{lstlisting}[language=bash, basicstyle=\ttfamily\small]
 interbank.py --log DEBUG --n 150 --t 2000
-interbank.py --save results.gdt --p 0.5 eta=0.35 param=X
+interbank.py --save results.gdt p=0.4 param=X
             \end{lstlisting}
         \item When it is used as a package, the sequence should be:
             \begin{lstlisting}[language=Python, basicstyle=\ttfamily\small]
@@ -46,26 +46,27 @@ model.forward()
         # To list all options:
         interbank.py --help
 
-        # Using lender's change mechanism ShockedMarket3
-        # with probability of attachment 0.3:
-        interbank.py --lc ShockedMarket3 --p 0.3
-
-        # Same for Preferential with m nodes:
-        interbank.py --lc Preferential --m 0.3
-
-        # To use a fastest algorithm to run in big simulations:
-        interbank.py --fast
-
         # To run a simulation based on exp_runner:
-        python -m experiments.exp_shockedmarket --do
+        uv run experimments\exp_min_p_0_1.py --do
+        # Same but using only surviving banks to  
+        # determine how last the system to die:
+        python -m experiments.exp_surviving_4.py --do
         \end{lstlisting}
 
-    \item \texttt{colab\_interbank.ipynb}: Notebook version of the standalone \texttt{interbank.py} with the same results but plotted using Bokeh.
-    \item \texttt{interbank\_lenderchange.py}: It contains the different algorithms that control the change of lender in the model.
+    \item \texttt{interbank\_lenderchange.py}: It contains the algorithm that control the change of lender in the model.
+    \item \texttt{interbank\_statistics.py}: Generates the stats of the model.
+    \item \texttt{interbank\_log.py}: Generates the logging.
+    \item \texttt{interbank\_testclass.py}: It contains the algorithm that control the change of lender in the model.
+    \item \texttt{interbank\_web.py}: Minimal web server for interbank using Flask.
     \item \texttt{exp\_runner.py}: A prototype for executing experiments with different parameters and using MonteCarlo (using concurrent.futures to allow multiple threads).
     \item \texttt{exp\_runner\_surviving.py}: A derivation of the former prototype using ray library to execute in a cluster.
     \item \texttt{experiments/}: directory with all the experiments conducted. The results of that executions are stored in a folder determined inside each experiment.
     \item \texttt{doc/algorithm.pdf}: the PDF schema of the algorithm used in the model to propagate shocks and to balance sheets.
+    \item \texttt{experiments/}: directory with all the experiments conducted. The results of that executions are stored in a folder determined inside   each experiment.
+    \item \texttt{output/}: directory with the output files (default one, you can change it using the `--output` option).
+
+
+
 \end{itemize}
 
 
@@ -78,17 +79,67 @@ model.forward()
   \label{fig:algorithm}
 \end{figure}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=\textwidth,keepaspectratio]{doc/alg1-000001}
-  \caption{Change lender with Boltzmann: in blue there are the differences with previous algorithm}
-  \label{fig:algorithm_boltzmann}
-\end{figure}
+\begin{itemize}
+    \item \texttt{interbank.py seed=1234 T=500 --p 0.2}: Execute the model with $T=500$ and $LenderChange$ algorithm of $ShockedMarket3$ with an Erdös-Réni with probability of attachment $p_a=0.2$ and using a seed for generating random values of $1234$ (same results if you generate again with other equal parameters and repeat this integer number for seed).
+    \item \texttt{interbank.py --save result --output\_format csv}: Save the results in \texttt{result.csv} in $CSV$. With \texttt{--log DEBUG --logfile result.txt} will save also the log in a file.
+\end{itemize}
+
 
 \begin{itemize}
-    \item \texttt{interbank.py --seed 1234 --t 500 --p 0.2}: Execute the model with $T=500$ and $LenderChange$ algorithm of $ShockedMarket3$ with an Erdös-Réni with probability of attachment $p_a=0.2$ and using a seed for generating random values of $1234$ (same results if you generate again with other equal parameters and repeat this integer number for seed).
-    \item \texttt{interbank.py --save result --output\_format csv --log DEBUG --logfile result.txt}: Save the results in \texttt{result.csv} in $CSV$ and the detailed log in \texttt{result.txt}.
+    \item \texttt{interbank.py --normalize\_ir}: Execute the model normalization the interest rate to a range $[0..1]$.
+    \item \texttt{interbank.py --robust\_ir}: Execute the model with a similar to a Robust Scaler algorithm normalization.
+
+    In our implementation, robust\_ir is a quantile-based min–max normalization applied per time step, not a true RobustScaler. Here is the formulation:
+            \begin{enumerate}
+                \item Let determine first the set of interest rates at time \(t\):
+                \[
+                \mathcal{I}_t = \left\{ r_i \,\middle|\, r_i \in \mathbb{R},\ i = 1,\dots,N_t \right\}
+                \]
+
+                \item We compute the low and high quantiles of this set (\(p_{\text{low}} = 5\%\) and \(p_{\text{high}} = 95\%\) by default):
+                \[
+                q_{\text{low}} = Q_{p_{\text{low}}}(\mathcal{I}_t),
+                \qquad
+                q_{\text{high}} = Q_{p_{\text{high}}}(\mathcal{I}_t).
+                \]
+
+                \item We clip the outliers:
+
+                \[
+                \tilde{r}_i = \max\!\left(q_{\text{low}},\, \min\!\left(q_{\text{high}},\, r_i\right)\right)
+                \]
+
+                \item And min-max normalize into  \([0, R]\) (with $R=1.0$ by default):
+
+                \[
+                r_i^{(\text{robust})} =
+                \begin{cases}
+                R \, \dfrac{\tilde{r}_i - q_{\text{low}}}{q_{\text{high}} - q_{\text{low}}}, & q_{\text{high}} > q_{\text{low}} \\[6pt]
+                0, & q_{\text{high}} = q_{\text{low}}
+                \end{cases}
+                \]
+
+            \end{enumerate}
+           
 \end{itemize}
+
+\section{Web server}
+
+
+A Web interface is available to run the model and visualize the results in charts. It is implemented with Flask and can be launched with \texttt{interbank.py --web} option.
+With  \texttt{--web\_mode dashboard --web\_port 8080} we obtain the same as previous command but explicitly setting the mode and port. Available modes are:
+\begin{itemize}
+    \item \texttt{simulate}: single execution UI.
+    \item \texttt{multiple}: parameter multiple-run UI.
+    \item \texttt{dashboard}: combined UI with tabs, includes charts for simulate/multiple.
+\end{itemize}
+In dashboard, chart metric visibility is selectable with checkboxes. Metric selections are persisted in browser `localStorage`.
+Backend routes are:
+\begin{itemize}
+    \item \texttt{POST /api/simulate} for single runs.
+    \item \texttt{POST /api/multiple} for multiple parameter runs.
+\end{itemize}
+The dashboard template file is \texttt{templates/template\_simulation.html}.
 
 \section{Statistics}
 
