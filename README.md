@@ -72,7 +72,7 @@
 # Basic usage of the model
 
 <figure id="fig:algorithm" data-latex-placement="htb">
-<img src="doc/alg-000001.png" />
+<img src="doc/alg-000001" />
 <figcaption>Sequence of steps: grey boxes indicates moments in which
 that statistic is obtained</figcaption>
 </figure>

@@ -58,7 +58,7 @@ class Config:
 
     # if false when a bank dies it's not replaced:
     allow_replacement_of_bankrupted : bool = True
-    allow_use_of_L_to_pay_rationing : bool = True
+    allow_use_of_L_to_pay_rationing : bool = False
     NORMALIZE_IR_RANGE_01: float = 1.0
     NORMALIZE_IR_RANGE_03: float = 3.0
     normalize_ir_range_max: float = NORMALIZE_IR_RANGE_01
@@ -510,8 +510,6 @@ class Model:
                 if self.lenders[i] ==-1:
                     self.l[i] = np.nan
                     self.rationing[i] = self.d[i]
-                    total_rationed += self.rationing[i]
-                    num_of_rationed += 1
                     string_result += f"rationed with no lender "
                 elif self.lenders[i] != -1 and self.s[self.lenders[i]] >= self.capacity[i]:
                     # this includes d=c, and rationing will be 0
@@ -521,8 +519,6 @@ class Model:
                             f"{self.log.format_number(self.capacity[i])}) ")
                     self.l[i] = self.capacity[i]
                     self.rationing[i] = self.d[i] -  self.capacity[i]
-                    total_rationed += self.rationing[i]
-                    num_of_rationed += 1
                     # lender:
                     self.C[self.lenders[i]] -= self.capacity[i]
                     self.s[self.lenders[i]] -= self.capacity[i]
@@ -542,8 +538,6 @@ class Model:
                     self.rationing[i] = self.d[i]
 
                 if self.rationing[i]>0:
-                    total_rationed += self.rationing[i]
-                    num_of_rationed += 1
                     string_result += f" rationed={self.log.format_number(self.rationing[i])},"
                 if self.lenders[i] != -1:
                     self.log.debug("loans ", f"{string_result}l={self.log.format_number(self.capacity[i])},"
@@ -553,7 +547,6 @@ class Model:
                 else:
                     self.log.debug("loans ", f"{string_result}l=nan, lender=no lender")
 
-        return num_of_rationed, total_rationed
 
 
     def check_if_bank_fails(self, bank, reason):
@@ -563,15 +556,29 @@ class Model:
                 # firesaling process with ro=0 (no cost of liquidation). If there is also money to pay also
                 # the interests, it is used as "excess" to pay them:
                 amount_of_loan = self.l[bank]
-                recovered_with_L = self.L[bank] if self.L[bank] > 0 else 0
-                if amount_of_loan - recovered_with_L > 0:
-                    bad_debt = amount_of_loan - recovered_with_L
-                    interests = 0
-                    paid_loan = recovered_with_L
+                pending_of_loan = amount_of_loan 
+                if self.C[bank] > pending_of_loan:
+                    pending_of_loan = 0
+                    self.C[bank] -= amount_of_loan                    
+                else:
+                    pending_of_loan -= self.C[bank]
+                    self.C[bank] = 0
+                if self.config.allow_use_of_L_to_pay_rationing and pending_of_loan > 0:
+                    if pending_of_loan <= self.L[bank]:
+                        pending_of_loan = 0
+                        self.L[bank] -= amount_of_loan
+                        interests = min( self.interest_rate[bank] * amount_of_loan, self.C[bank]+self.L[bank])
+                    else:
+                        pending_of_loan -= self.L[bank]
+                        self.L[bank] = 0
+                        interests = 0
+                else:
+                    interests = min(self.C[bank], self.interest_rate[bank] * amount_of_loan)
+                paid_loan = amount_of_loan - pending_of_loan
+                if pending_of_loan > 0:
+                    bad_debt = pending_of_loan
                 else:
                     bad_debt = 0
-                    paid_loan = amount_of_loan
-                    interests = min( self.interest_rate[bank] * amount_of_loan, recovered_with_L-amount_of_loan )
                 self.log.debug("repayments", f"#{bank} uses L to pay {reason} and fails, "
                     f"#{self.lenders[bank]} "
                     f"bad_debt={self.log.format_number(bad_debt)},"
@@ -652,9 +659,15 @@ class Model:
                     self.C[i] = 0
                     if self.check_if_bank_fails(i, "pay interests"):
                         # interests_to_payback is greater than the L we had to use and partially paid:
-                        really_paid = interest_to_payback - self.L[i]
+                        if self.L[i] < 0:
+                            really_paid = 0
+                        elif self.L[i] < interest_to_payback:
+                            really_paid = interest_to_payback - self.L[i]
+                        else:
+                            really_paid = interest_to_payback
                         self.C[self.lenders[i]] += really_paid
                         self.E[self.lenders[i]] += really_paid
+                        self.failed[i] = 1
                         profits_paid += really_paid
                         self.log.debug("repayments", f"#{i} pays partially loan+interests to #{self.lenders[i]} "
                             f"loan={self.log.format_number(amount_of_loan)} and "
@@ -669,6 +682,11 @@ class Model:
                             f"loan={self.log.format_number(amount_of_loan)} and "
                             f"interests={self.log.format_number(interest_to_payback)}")
                 self.check_if_bank_fails(i, "pay interests")
+            else:
+                self.check_if_bank_fails(i, "no loan to pay")
+        
+        for i in range(self.config.N):
+            self.check_if_bank_fails(i, "after repayments")
         return profits_paid
 
 
@@ -724,10 +742,9 @@ class Model:
             self.stats.compute_capacity()
             self.stats.compute_prob_bankruptcy()
             self.log.debug_banks()
-            num_of_rationed, total_rationed = self.do_loans()
-            self.stats.compute_rationing(num_of_rationed, total_rationed)
+            self.do_loans()
+            self.stats.compute_rationing()
             self.stats.compute_num_loans()
-            self.stats.compute_ir_avg()
             self.do_shock2()
             self.stats.compute_d2()
             self.log.debug_banks()

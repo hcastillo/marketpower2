@@ -197,7 +197,7 @@ The different statistics of information obtained in table~\ref{table1} are class
 \begin{itemize}
         \item Global: using \textbf{--save filename}: each data column in \textbf{filename.gdt}  will be obtained for all the $N$ banks in the model for all instants time $T$ (rows)
         \item With \textbf{--stats\_market} what we obtain will be a file as \textbf{filenameb.gdt} for the subsets of banks that in each time are engaged in a real loan. So if in the time $t$ there are no loans, it is removed from this statistics. The special value \texttt{real\_t} indicates which was the original time.
-        \item Individual is data obtained when we use \textbf{--detail\_times} or \textbf{--detail\_banks}, and it stores  \textbf{filename\_detailed.gdt}  of those moments for all the banks individually or specific banks.
+        \item Individual is data that makes sense to be obtained for each bank.
         \item Graphs are data obtained also in \textbf{filename.gdt}, but only we have a \textbf{LenderChange} algorithm with a random graph.
 \end{itemize}
 

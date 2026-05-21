@@ -39,7 +39,6 @@ class Statistics:
         self.bankruptcies = []
         self.bankruptcy_rationed = []
         self.ir = []
-        self.ir_avg = []
         self.var_D1 = []
         self.var_D2 = []
         self.var_D = []
@@ -435,9 +434,9 @@ class Statistics:
     def compute_liquidity(self):
         self.liquidity.append(np.nansum(self.model.C))
 
-    def compute_rationing(self, num_of_rationed, total_rationed):
-        self.rationing.append(total_rationed)
-        self.num_of_rationed.append(num_of_rationed)
+    def compute_rationing(self):
+        self.rationing.append(np.nansum(self.model.rationing))
+        self.num_of_rationed.append(np.sum(self.model.rationing >0))
 
     def compute_profits(self, profits_paid):
         self.profits.append(profits_paid)
@@ -467,11 +466,7 @@ class Statistics:
         self.num_loans.append(np.sum((self.model.l > 0) & ~np.isnan(self.model.l)))
         self.loans.append(np.nansum(self.model.l))
 
-    def compute_ir_avg(self):
-        if np.any(self.model.l > 0):
-            self.ir_avg.append(np.mean(self.model.interest_rate[self.model.l > 0]))
-        else:
-            self.ir_avg.append(np.nan)
+
 
     def compute_graph(self):
         self.gcs.append(self.model.lenderchange.determine_current_graph_gcs())

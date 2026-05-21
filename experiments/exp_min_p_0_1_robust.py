@@ -22,10 +22,10 @@ class MinPRun(exp_runner.ExperimentRun):
     MC = 10
 
     ALGORITHM = LenderChange
-    OUTPUT_DIRECTORY = "/experiments/robust_exp_min_p_0_1"
+    OUTPUT_DIRECTORY = "/experiments/robust_exp_min_p_0_01"
 
     parameters = {
-        "p": np.linspace(0.00001, 1, num=10) # [0.01, 0.05, 0.07, 0.0075, 0.08, 0.09, 0.35, 0.5, 0.9] 
+        "p":  [0.01, 0.05, 0.07, 0.0075, 0.08, 0.09, 0.35, 0.5, 0.9] # np.linspace(0.00001, 1, num=10) #
     }
 
     config = { "robust_ir": True }

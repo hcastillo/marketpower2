@@ -15,7 +15,7 @@ class ValuesAfterExecutionTestCase(interbank_testclass.InterbankTest):
         self.model.log.debug_bank(0,"shock")
         self.model.do_repayments()
         self.model.log.debug_bank(0,"repay")
-        self.assertBank(0, C=0, R=0.08, L=4.92, E=0.92, D=4, rationing=0, failed=False)
+        self.assertBank(0, C=-0.08, R=0.08, L=5, E=1, D=4, rationing=0, failed=False)
 
 if __name__ == '__main__':
     unittest.main()

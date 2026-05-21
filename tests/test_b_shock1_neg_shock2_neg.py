@@ -15,7 +15,7 @@ class ValuesAfterExecutionTestCase(interbank_testclass.InterbankTest):
         self.assertBank(0, C=0)
         self.model.do_repayments()
         self.model.log.debug_bank(0)
-        self.assertBank(0, C=0, R=0.02, D=1, rationing=0, E=-0.06, failed=1)
+        self.assertBank(0, C=0, R=0.02, D=1, rationing=0, E=-2.02, failed=1)
 
     def test_positive_shock_of2(self):
         self.configureTest(N=2, T=2, seed=12, model_name='pos_2')
@@ -40,7 +40,7 @@ class ValuesAfterExecutionTestCase(interbank_testclass.InterbankTest):
         self.model.do_repayments()
         self.model.log.debug_bank(0)
         print(self.model.failed)
-        self.assertBank(0, C=0, R=0.08, D=4, rationing=0, failed=False)
+        self.assertBank(0, C=-0.08, R=0.08, D=4, rationing=0, failed=False)
 
 
 if __name__ == '__main__':
