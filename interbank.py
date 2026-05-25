@@ -64,6 +64,7 @@ class Config:
     normalize_ir_range_max: float = NORMALIZE_IR_RANGE_01
     normalize_ir: bool = False
     sqrt_ir: bool = False
+    robust2_ir: bool = False
     robust_ir: bool = False
     ROBUST_IR_QUANTILE_LOW: float = 5.0
     ROBUST_IR_QUANTILE_HIGH: float = 95.0
@@ -77,6 +78,7 @@ class Config:
             self.N = N
         if seed>-1:
             self.seed = seed
+        self.initialN = self.N
 
     def __str__(self, separator=''):
         description = sys.argv[0] if __name__ == '__main__' else ''
@@ -163,8 +165,6 @@ class Model:
 
     def __init__(self, T:int=-1, N:int=-1, seed:int=-1):
         self.config = Config(T, N, seed)
-        self.initial_N = self.config.N
-        self.Ninitial = self.config.N
         self.stats = Stats(self)
         self.log = Log(self)
         self.lenderchange = lc.LenderChange(self)
@@ -202,8 +202,6 @@ class Model:
 
     def init(self):
         self.t = 0
-        self.initial_N = self.config.N
-        self.Ninitial = self.config.N
         self.C = np.zeros(self.config.N, dtype=float)
         self.bad_debt = np.zeros(self.config.N, dtype=float)
         self.failed = np.zeros(self.config.N, dtype=int)
@@ -381,10 +379,10 @@ class Model:
 
     def do_interest_rate(self):
         selected_ir_transformations = (
-            int(self.config.normalize_ir) + int(self.config.sqrt_ir) + int(self.config.robust_ir)
+            int(self.config.normalize_ir) + int(self.config.sqrt_ir) + int(self.config.robust_ir) + int(self.config.robust2_ir)
         )
         if selected_ir_transformations > 1:
-            raise ValueError("normalize_ir, sqrt_ir and robust_ir are mutually exclusive")
+            raise ValueError("normalize_ir, sqrt_ir, robust_ir and robust2_ir are mutually exclusive")
 
         #TODO we can estimate prob bankruptcy for each borrower counting only its possible lenders
         #     more heterogeneous 
@@ -496,6 +494,18 @@ class Model:
                     self.interest_rate[finite_mask] = transformed * normalize_ir_range_max
                 else:
                     self.interest_rate[finite_mask] = 0.0
+        elif self.config.robust2_ir:
+            finite_mask = np.isfinite(self.interest_rate)
+            if np.any(finite_mask):
+                finite_values = self.interest_rate[finite_mask]
+                q_low = float(self.config.robust_ir_quantile_low)
+                q_high = float(self.config.robust_ir_quantile_high)
+                if q_low < 0 or q_high > 100 or q_low >= q_high:
+                    raise ValueError("robust2_ir quantiles must satisfy 0 <= low < high <= 100")
+                low_value = np.percentile(finite_values, q_low)
+                high_value = np.percentile(finite_values, q_high)
+                if high_value > low_value:
+                    self.interest_rate[finite_mask] = np.clip(finite_values, low_value, high_value)
 
 
     def do_loans(self):
@@ -802,6 +812,9 @@ class Model:
         ir_group.add_argument('--robust_ir', action='store_true',
                               default=self.config.robust_ir,
                               help='Apply robust scaler transform to interest rates in each step')
+        ir_group.add_argument('--robust2_ir', action='store_true',
+                              default=self.config.robust2_ir,
+                              help='Winsorize interest rates at quantile bounds in each step')
         args, other_possible_config_args = parser.parse_known_args()
         if args.web:
             from interbank_web import create_app
@@ -813,12 +826,13 @@ class Model:
         self.config.normalize_ir = args.normalize_ir
         self.config.sqrt_ir = args.sqrt_ir
         self.config.robust_ir = args.robust_ir
+        self.config.robust2_ir = args.robust2_ir
         self.config.define_values_from_args(other_possible_config_args)
         selected_ir_transformations = (
-            int(self.config.normalize_ir) + int(self.config.sqrt_ir) + int(self.config.robust_ir)
+            int(self.config.normalize_ir) + int(self.config.sqrt_ir) + int(self.config.robust_ir) + int(self.config.robust2_ir)
         )
         if selected_ir_transformations > 1:
-            parser.error("--normalize_ir, --sqrt_ir and --robust_ir are mutually exclusive")
+            parser.error("--normalize_ir, --sqrt_ir, --robust_ir and --robust2_ir are mutually exclusive")
         self.log.define_log(args.log, args.logfile)
         self.stats.define_output_format(args.output_format)
         self.stats.define_output_directory(args.output)

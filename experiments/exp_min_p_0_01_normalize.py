@@ -19,23 +19,22 @@ from interbank_lenderchange import LenderChange
 class MinPRun(exp_runner.ExperimentRun):
     N = 50
     T = 1000
-    MC = 30
+    MC = 10
 
     ALGORITHM = LenderChange
-    OUTPUT_DIRECTORY = "/experiments/exp_min_p_0_1b"
+    OUTPUT_DIRECTORY = "/experiments/normalize_exp_min_p_0_01"
 
     parameters = {
-        "p":   np.linspace(0.00001, 1, num=10), #
-        
+        "p": [0.01, 0.05, 0.07, 0.0075, 0.08, 0.09, 0.35, 0.5, 0.9] # np.linspace(0.00001, 1, num=10), # 
     }
 
-    config = { }
+    config = {  "normalize_ir_range_max": 3,     "normalize_ir": True}
 
     LENGTH_FILENAME_PARAMETER = 5
     LENGTH_FILENAME_CONFIG = 0
 
-    SEED_FOR_EXECUTION = 25
-    
+    SEED_FOR_EXECUTION = 2025
+
     XTICKS_SCALED = True
     NAME_OF_X_SERIES = "p"
 

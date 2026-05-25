@@ -1,0 +1,334 @@
+\documentclass[11pt]{beamer}
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{bbm}
+
+\title[Systemic Risk Experiment]{Systemic Risk Analysis\\in Interbank Networks}
+\subtitle{Detecting fragility at high connectivity}
+\author{Interbank Model}
+\institute{Interbank Simulation Framework}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Motivation}
+\centering
+\Large
+How does systemic risk behave\\as network connectivity increases?
+
+\vspace{1em}
+\normalsize
+\begin{itemize}
+    \item In sparsely connected networks, failures are isolated events
+    \item In dense networks, ``mutual insurance'' can turn into a ``financial accelerator''
+    \item Strategy synchronization amplifies shocks instead of absorbing them
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Research Question}
+\centering
+\Large
+\textbf{Does high connectivity generate\\heavier tails in the bankruptcy distribution?}
+
+\vspace{1.5em}
+\normalsize
+\noindent
+If so:
+\begin{itemize}
+    \item Higher kurtosis $\Rightarrow$ extreme events more likely
+    \item Lower Hill exponent $\Rightarrow$ heavier tail
+    \item Lower distance to default $\Rightarrow$ higher leverage
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The Interbank Model}
+\small
+\noindent\textbf{Agents:} $N=50$ banks, each with balance sheet:
+\[
+C_i + L_i + R_i = D_i + E_i
+\]
+
+\medskip
+\noindent\textbf{Time step} ($T=1000$ iterations):
+\begin{enumerate}
+    \item \textbf{Shock 1:} $\Delta D \sim \mathcal{U}(\mu, \mu + \omega)$,
+          $d_i = \max(0, \Delta D_i - C_i)$, $s_i = \max(0, C_i - \Delta D_i)$
+    \item \textbf{Network:} Erdős--Rényi graph with probability $p$
+    \item \textbf{Interest rate:} $r_i = \dfrac{m}{\pi_i (1 - \psi_{\ell(i)})}$,
+          where $\pi_i = E_i / \max E_{\text{borr}}$ and $\psi_j = E_j / \max E_{\text{lend}}$
+    \item \textbf{Normalization (optional):} \texttt{robust2\_ir} — winsorization at percentiles 5--95
+    \item \textbf{Loans:} $l_i = \min(\text{capacity}_i, s_{\ell(i)})$,
+          rationing if $l_i < d_i$
+    \item \textbf{Shock 2:} second deposit shock (only for borrowers)
+    \item \textbf{Repayment:} loans and interests are settled;
+          if $E_i < 0$ or $L_i < 0$ the bank fails
+    \item \textbf{Replacement:} failed banks are re-initialized
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{robust2\_ir Normalization}
+\framesubtitle{Winsorization without rescaling}
+
+\noindent\textbf{Problem:} Raw interest rates may contain extreme values
+that distort averages.
+
+\vspace{0.5em}
+\noindent\textbf{Solution:} Clip (winsorize) values outside a percentile range,
+\emph{without rescaling}.
+
+\vspace{0.5em}
+\[
+\tilde{r}_i =
+\begin{cases}
+Q_{\text{low}}  & \text{if } r_i < Q_{\text{low}} \\
+r_i             & \text{if } Q_{\text{low}} \leq r_i \leq Q_{\text{high}} \\
+Q_{\text{high}} & \text{if } r_i > Q_{\text{high}}
+\end{cases}
+\]
+
+\vspace{0.5em}
+\noindent With $Q_{\text{low}} = 5\%$, $Q_{\text{high}} = 95\%$ (configurable).
+
+\medskip
+\noindent\textbf{Properties:}
+\begin{itemize}
+    \item Monotonic $\Rightarrow$ preserves ir vs $\psi$ correlation
+    \item No rescaling $\Rightarrow$ preserves natural trend with $p$
+    \item Only removes outliers $\Rightarrow$ distribution shape almost intact
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{robust2\_ir Implementation}
+\small
+\begin{lstlisting}[language=Python]
+elif self.config.robust2_ir:
+    finite_mask = np.isfinite(self.interest_rate)
+    if np.any(finite_mask):
+        finite_values = self.interest_rate[finite_mask]
+        q_low = float(self.config.robust_ir_quantile_low)    # 5
+        q_high = float(self.config.robust_ir_quantile_high)  # 95
+        low = np.percentile(finite_values, q_low)
+        high = np.percentile(finite_values, q_high)
+        if high > low:
+            self.interest_rate[finite_mask] = np.clip(
+                finite_values, low, high)
+\end{lstlisting}
+
+\vspace{0.3em}
+\noindent Mutually exclusive with \texttt{normalize\_ir}, \texttt{sqrt\_ir}, \texttt{robust\_ir}.
+\end{frame}
+
+\begin{frame}{Experiment Design: \texttt{exp\_sysrisk.py}}
+\small
+\noindent\textbf{Fixed parameters:}
+\begin{itemize}
+    \item $N = 50$ banks, $T = 1000$ steps, $MC = 30$ Monte Carlo runs
+    \item Bank replacement enabled
+    \item Normalization: \texttt{robust2\_ir = True} (winsorization 5--95)
+\end{itemize}
+
+\medskip
+\noindent\textbf{Independent variable:}
+\[
+p \in [0.08, 1.0] \quad \text{(20 evenly spaced values)}
+\]
+
+\medskip
+\noindent\textbf{Additional metrics:}
+\begin{itemize}
+    \item \texttt{kurtosis\_bankruptcies}: Fisher kurtosis of the bankruptcy series
+    \item \texttt{hill\_bankruptcies}: Hill tail exponent of the upper tail
+    \item \texttt{dist\_to\_default}: mean capital ratio $E/(D+E)$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Metric 1: Kurtosis of Bankruptcies}
+\centering
+\Large
+\[
+\text{Kurtosis} = \frac{1}{n} \sum_{t=1}^T
+\left( \frac{B_t - \bar{B}}{\sigma_B} \right)^4 - 3
+\]
+
+\vspace{0.5em}
+\normalsize
+\noindent
+Where $B_t = \sum_i \mathbbm{1}_{\text{failed}}(i)$ at each step $t$.
+
+\vspace{1em}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\centering
+\textbf{Kurtosis $> 0$}\\
+Heavier tail\\
+Extreme events\\
+more likely
+\end{column}
+\begin{column}{0.45\textwidth}
+\centering
+\textbf{Kurtosis $< 0$}\\
+Lighter tail\\
+More uniform\\
+distribution
+\end{column}
+\end{columns}
+
+\vspace{0.5em}
+\noindent\textbf{Hypothesis:} High $p$ $\Rightarrow$ higher kurtosis.
+\end{frame}
+
+\begin{frame}{Metric 2: Hill Exponent}
+\centering
+\Large
+\[
+H_k = \frac{1}{k} \sum_{i=1}^{k} \log\left( \frac{B_{(i)}}{B_{(k+1)}} \right)
+\]
+
+\vspace{0.5em}
+\normalsize
+\noindent
+$B_{(1)} \geq B_{(2)} \geq \cdots \geq B_{(k+1)}$ are the sorted
+bankruptcy counts (upper tail).
+
+\vspace{1em}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\centering
+\textbf{Low Hill}\\
+Heavy tail\\
+Higher probability\\
+of large failures
+\end{column}
+\begin{column}{0.45\textwidth}
+\centering
+\textbf{High Hill}\\
+Light tail\\
+Large failures\\
+are rare
+\end{column}
+\end{columns}
+
+\vspace{0.5em}
+\noindent\textbf{Hypothesis:} High $p$ $\Rightarrow$ lower Hill exponent.
+\end{frame}
+
+\begin{frame}{Metric 3: Distance to Default}
+\centering
+\Large
+\[
+\rho_t = \frac{E_t}{D_t + E_t}
+\]
+
+\vspace{0.5em}
+\normalsize
+\noindent
+Aggregate capital ratio at each step $t$.
+
+\vspace{1em}
+\begin{itemize}
+    \item $\rho$ high ($\approx 0.10$): well-capitalized banks
+    \item $\rho$ low: leveraged banks, more fragile
+    \item At equilibrium: $E_0 / (D_0 + E_0) = 1 / (9 + 1) = 0.10$
+\end{itemize}
+
+\vspace{0.5em}
+\noindent\textbf{Hypothesis:} High $p$ $\Rightarrow$ lower $\rho$ (higher leverage
+from synchronization of strategies).
+\end{frame}
+
+\begin{frame}{Running the Experiment}
+\small
+\noindent\textbf{From the command line:}
+\begin{lstlisting}
+python experiments/exp_sysrisk.py --do
+\end{lstlisting}
+
+\medskip
+\noindent\textbf{Output:}
+\begin{itemize}
+    \item \texttt{output/exp\_sysrisk/results.gdt} — full results
+    \item \texttt{output/exp\_sysrisk/*.png} — plots of each variable vs $p$
+    \item \texttt{output/exp\_sysrisk/*.txt} — numerical data
+    \item \texttt{output/exp\_sysrisk/results.txt} — cross-correlations
+\end{itemize}
+
+\medskip
+\noindent\textbf{Clean and re-run:}
+\begin{lstlisting}
+python experiments/exp_sysrisk.py --do --clear
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{Expected Interpretation}
+\centering
+\Large
+If the dense network acts as a financial accelerator:
+
+\vspace{1em}
+\normalsize
+\begin{columns}
+\begin{column}{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth,height=4em]{example-image}\\
+\textbf{Kurtosis}\\
+Increasing with $p$
+\end{column}
+\begin{column}{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth,height=4em]{example-image}\\
+\textbf{Hill}\\
+Decreasing with $p$
+\end{column}
+\begin{column}{0.3\textwidth}
+\centering
+\includegraphics[width=\textwidth,height=4em]{example-image}\\
+\textbf{Distance to default}\\
+Decreasing with $p$
+\end{column}
+\end{columns}
+
+\vspace{1em}
+\noindent This would confirm that connectivity transforms
+the network into a vector of systemic insolvency.
+\end{frame}
+
+\begin{frame}{Summary}
+\centering
+\Large
+\textbf{Three metrics, one hypothesis}
+
+\vspace{1.5em}
+\normalsize
+\begin{enumerate}
+    \item \textbf{Kurtosis} $\uparrow$ $\Rightarrow$ extreme events more likely
+    \item \textbf{Hill} $\downarrow$ $\Rightarrow$ heavier tails
+    \item \textbf{Distance to default} $\downarrow$ $\Rightarrow$ greater fragility
+\end{enumerate}
+
+\vspace{1.5em}
+\noindent If all three point in the expected direction, we have evidence
+that \textbf{high connectivity generates systemic fragility}.
+\end{frame}
+
+\begin{frame}{References}
+\small
+\begin{itemize}
+    \item Allen, F. \& Gale, D. (2000). Financial contagion. \textit{Journal of Political Economy}, 108(1), 1--33.
+    \item Battiston, S. et al. (2012). DebtRank: Too central to fail? \textit{Journal of Economic Dynamics and Control}, 36(11), 1615--1626.
+    \item Hill, B. M. (1975). A simple general approach to inference about the tail of a distribution. \textit{The Annals of Statistics}, 3(5), 1163--1174.
+    \item Source code: \url{https://github.com/anomalyco/interbank}
+\end{itemize}
+\end{frame}
+
+\end{document}

@@ -21,7 +21,7 @@ class RestrictedMarketSurvivingRun(exp_runner_surviving.SurvivingRun):
     T = 1000
     MC = 15
 
-    OUTPUT_DIRECTORY = "output/surviving.psi0.4"
+    OUTPUT_DIRECTORY = "/experiments/surviving.psi0.4"
     #DESCRIPTION_TITLE = "with \\rho=0.3"
 
     parameters = {

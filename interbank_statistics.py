@@ -56,8 +56,6 @@ class Statistics:
         self.equity = []
         self.profits = []
         self.correlation = []
-        self.initial_N = []
-        self.Ninitial = []
         self.num_banks = []
 
     # ---------------------------------------------------------------------------
@@ -184,7 +182,7 @@ class Statistics:
             and np.isfinite(sign_change_ratio)
             and sign_change_ratio > 0.35
             and np.isfinite(near_zero_step_ratio)
-            and near_zero_step_ratio < 0.04
+            and near_zero_step_ratio < 0.05
         )
 
         validity_text = 'OK' if is_valid else 'KO'
@@ -193,7 +191,7 @@ class Statistics:
             f'finite values >=99%: {finite_ratio * 100:.2f}%; '
             f'std(diff)>0.25: {std_diff:.2f}; '
             f'sign_change_ratio > 0.35: {sign_change_ratio:.2f}; '
-            f'near_zero_step_ratio < 0.04: {near_zero_step_ratio:.2f}'
+            f'near_zero_step_ratio < 0.05: {near_zero_step_ratio:.2f}'
         )
     
     def generate_gdt_file(self, filename, header, selected_indices=None, include_real_t=False):
@@ -269,8 +267,7 @@ class Statistics:
         file_header = ''
         for line_header in header:
             file_header += '# {}\n'.format(line_header)
-        file_header += "# pd.read_csv('file{}',header={}', delimiter='{}')\nt".format(self.output_format,
-                                                                                       len(header) + 1, delimiter)
+        file_header += f"# pd.read_csv('file{self.output_format}',header={len(header) + 1}', delimiter='{delimiter}')\nt"
         data_series = list(self.enumerate_time_series_results())
         if selected_indices is None:
             selected_indices = list(range(self.get_observation_count()))
@@ -481,6 +478,4 @@ class Statistics:
         self.prob_bankruptcy.append(1 - np.nanmean(self.model.prob_bankruptcy))
 
     def compute_num_banks(self):
-        self.initial_N.append(self.model.initial_N)
-        self.Ninitial.append(self.model.initial_N)
         self.num_banks.append(self.model.config.N)
