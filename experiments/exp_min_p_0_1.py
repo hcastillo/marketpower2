@@ -22,7 +22,7 @@ class MinPRun(exp_runner.ExperimentRun):
     MC = 30
 
     ALGORITHM = LenderChange
-    OUTPUT_DIRECTORY = "/experiments/exp_min_p_0_1b"
+    OUTPUT_DIRECTORY = "/experiments/exp_min_p_0_1"
 
     parameters = {
         "p":   np.linspace(0.00001, 1, num=10), #

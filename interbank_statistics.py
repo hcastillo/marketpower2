@@ -38,10 +38,17 @@ class Statistics:
         self.psi = []
         self.bankruptcies = []
         self.bankruptcy_rationed = []
+        self.bankruptcy_contagion = []
         self.ir = []
+        self.ir_max = []
+        self.ir_min = []
+        self.ir_weighted_max = []
+        self.ir_weighted_min = []
+        self.ir_weighted = []        
         self.var_D1 = []
         self.var_D2 = []
         self.var_D = []
+        self.leverage = []
         self.d1 = []
         self.d2 = []
         self.asset_i = []
@@ -134,6 +141,7 @@ class Statistics:
     def finish(self):
         self.determine_cross_correlation()
         if self.model.log.interactive:
+            print('\n')
             self.print_cross_correlation_summary()
         self.save( export_datafile=self.export_datafile, export_description=str(self.model.config))
         result = pd.DataFrame()
@@ -414,7 +422,9 @@ class Statistics:
     def compute_bankruptcies(self):
         self.bankruptcies.append(np.nansum(self.model.failed))
         failed_with_rationing = np.logical_and(self.model.failed > 0, self.model.was_rationed)
+        failed_with_contagion = np.logical_and(self.model.failed > 0, self.model.bad_debt > 0)
         self.bankruptcy_rationed.append(np.nansum(failed_with_rationing))
+        self.bankruptcy_contagion.append(np.nansum(failed_with_contagion))
 
     def compute_d1(self):
         self.d1.append(np.nansum(self.model.d))
@@ -422,11 +432,27 @@ class Statistics:
 
     def compute_ir(self):
         self.ir.append( np.nanmean(self.model.interest_rate) )
+        self.ir_max.append( np.nanmax(self.model.interest_rate) )
+        self.ir_min.append( np.nanmin(self.model.interest_rate) )
+        
+    def compute_ir_weighted(self):
+        total_loans = np.nansum(self.model.l)
+        if total_loans > 0:
+            self.ir_weighted.append( np.nansum(self.model.interest_rate * self.model.l) / total_loans )
+            self.ir_weighted_max.append( np.nanmax(self.model.interest_rate * self.model.l) / total_loans )
+            self.ir_weighted_min.append( np.nanmin(self.model.interest_rate * self.model.l) / total_loans )
+        else:
+            self.ir_weighted.append( np.nan )
+            self.ir_weighted_max.append( np.nan )
+            self.ir_weighted_min.append( np.nan )
 
     def compute_d2(self):
-        self.d2.append(np.nansum(self.model.d))
+        self.d2.append(np.nansum(self.model.d2))
         self.var_D2.append(np.sum(self.model.varD2))
         self.var_D.append(self.model.varD1[-1] + self.model.varD2[-1])
+        
+    def compute_leverage(self):
+        self.leverage.append((self.d2[-1]+self.d1[-1]) / self.equity[-1] if self.equity[-1] > 0 else np.nan)
 
     def compute_liquidity(self):
         self.liquidity.append(np.nansum(self.model.C))

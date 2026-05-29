@@ -51,13 +51,14 @@ class Config:
     # R_i0=0.18
     D_i0: float = 9     # deposits
     E_i0: float = 1     # equity
-    r_i0: float = 0.02  # initial rate
+    r_i0: float = 0.02  # reserves
     
     # maximum interest rate that can be applied to a loan (to avoid infinite rates when bankruptcy probability is 0 or psi=1)
     max_interest_rate: float = 1
 
     # if false when a bank dies it's not replaced:
     allow_replacement_of_bankrupted : bool = True
+    replace_with_mode : bool = False
     allow_use_of_L_to_pay_rationing : bool = False
     NORMALIZE_IR_RANGE_01: float = 1.0
     NORMALIZE_IR_RANGE_03: float = 3.0
@@ -383,10 +384,6 @@ class Model:
         )
         if selected_ir_transformations > 1:
             raise ValueError("normalize_ir, sqrt_ir, robust_ir and robust2_ir are mutually exclusive")
-
-        #TODO we can estimate prob bankruptcy for each borrower counting only its possible lenders
-        #     more heterogeneous 
-
         # 1. probability of bankruptcy: for borrowers, we can estimate it as E/max(E of borrowers), for lenders is nan:
         borrowers_E = self.E[self.d>0]
         max_e_borrowers = np.nanmax(borrowers_E) if len(borrowers_E) > 0 and not np.isnan(borrowers_E).all() else 1.0
@@ -566,6 +563,8 @@ class Model:
                 # firesaling process with ro=0 (no cost of liquidation). If there is also money to pay also
                 # the interests, it is used as "excess" to pay them:
                 amount_of_loan = self.l[bank]
+                initial_c = self.C[bank]
+                # main loan:
                 pending_of_loan = amount_of_loan 
                 if self.C[bank] > pending_of_loan:
                     pending_of_loan = 0
@@ -577,28 +576,41 @@ class Model:
                     if pending_of_loan <= self.L[bank]:
                         pending_of_loan = 0
                         self.L[bank] -= amount_of_loan
-                        interests = min( self.interest_rate[bank] * amount_of_loan, self.C[bank]+self.L[bank])
+                        l_used = f"L={self.log.format_number(self.L[bank])} due to rationing paid with L,"
                     else:
                         pending_of_loan -= self.L[bank]
                         self.L[bank] = 0
-                        interests = 0
+                        l_used = "L=0 used to pay rationing but not enough,"
                 else:
-                    interests = min(self.C[bank], self.interest_rate[bank] * amount_of_loan)
+                    l_used = ""
                 paid_loan = amount_of_loan - pending_of_loan
                 if pending_of_loan > 0:
                     bad_debt = pending_of_loan
                 else:
                     bad_debt = 0
-                self.log.debug("repayments", f"#{bank} uses L to pay {reason} and fails, "
-                    f"#{self.lenders[bank]} "
+                # interests of the loan:   
+                interests = self.interest_rate[bank] * amount_of_loan
+                if self.C[bank] < interests:
+                    interests_paid = self.C[bank] if self.C[bank] > 0 else 0
+                    self.C[bank] = 0
+                else:
+                    interests_paid = interests
+                    self.C[bank] -= interests
+                
+                    
+                self.log.debug("repayments", f"#{bank} {reason} fails: {l_used}"
+                    f"lender #{self.lenders[bank]} "
+                    f"initial_C={self.log.format_number(initial_c)},"
                     f"bad_debt={self.log.format_number(bad_debt)},"
                     f"interests={self.log.format_number(interests)},"
+                    f"interests_paid={self.log.format_number(interests_paid)},"
                     f"paid={self.log.format_number(paid_loan)},")
                 self.C[self.lenders[bank]] += paid_loan
-                self.C[self.lenders[bank]] += interests
-                self.E[self.lenders[bank]] += interests
+                self.C[self.lenders[bank]] += interests_paid
+                self.E[self.lenders[bank]] += interests_paid
                 self.s[self.lenders[bank]] -= amount_of_loan
                 self.bad_debt[self.lenders[bank]] += abs(bad_debt)
+                self.loaned[self.lenders[bank]] -= abs(bad_debt)
             return 1
         return 0
 
@@ -675,8 +687,8 @@ class Model:
                             really_paid = interest_to_payback - self.L[i]
                         else:
                             really_paid = interest_to_payback
-                        self.C[self.lenders[i]] += really_paid
-                        self.E[self.lenders[i]] += really_paid
+                        self.C[self.lenders[i]] += really_paid 
+                        self.E[self.lenders[i]] += really_paid 
                         self.failed[i] = 1
                         profits_paid += really_paid
                         self.log.debug("repayments", f"#{i} pays partially loan+interests to #{self.lenders[i]} "
@@ -696,7 +708,12 @@ class Model:
                 self.check_if_bank_fails(i, "no loan to pay")
         
         for i in range(self.config.N):
-            self.check_if_bank_fails(i, "after repayments")
+            if self.failed[i] != 1:
+                if self.bad_debt[i] > 0:                    
+                    self.E[i] -= self.bad_debt[i]
+                    self.check_if_bank_fails(i,"bad debt paid with E")
+                else:
+                    self.check_if_bank_fails(i, "after repayments")
         return profits_paid
 
 
@@ -709,6 +726,11 @@ class Model:
         self.C[i] = self.C[i] - self.R[i]
         self.failed[i] = 0
 
+    @staticmethod
+    def _mode_of(values):
+        uniq, counts = np.unique(values, return_counts=True)
+        return uniq[np.argmax(counts)]
+
     def replace_failed_banks(self):
         if not self.config.allow_replacement_of_bankrupted:
             if self.config.N == 0:
@@ -719,10 +741,29 @@ class Model:
                 return
             self.compact_bank_state(alive_mask)
             return
-
-        for i in range(self.config.N):
-            if self.failed[i] == 1:
-                self.init_bank(i)
+        if self.config.replace_with_mode:
+            alive = self.failed == 0
+            if np.any(alive):
+                c_mode = self._mode_of(self.C[alive])
+                e_mode = self._mode_of(self.E[alive])
+                l_mode = self._mode_of(self.L[alive])
+                d_mode = self._mode_of(self.D[alive])
+            for i in range(self.config.N):
+                if self.failed[i] == 1:
+                    if np.any(alive):
+                        self.init_bank(i)
+                        self.C[i] = c_mode
+                        self.E[i] = e_mode
+                        self.L[i] = l_mode 
+                        self.D[i] = (self.C[i] + self.L[i] - self.E[i]) / (1 - self.config.r_i0)
+                        self.R[i] = self.config.r_i0 * self.D[i]
+                    else:
+                        self.init_bank(i)
+                    self.failed[i] = 0
+        else:
+            for i in range(self.config.N):
+                if self.failed[i] == 1:
+                    self.init_bank(i)
 
 
     def init_step(self, t):
@@ -753,6 +794,7 @@ class Model:
             self.stats.compute_prob_bankruptcy()
             self.log.debug_banks()
             self.do_loans()
+            self.stats.compute_ir_weighted()
             self.stats.compute_rationing()
             self.stats.compute_num_loans()
             self.do_shock2()
@@ -768,6 +810,7 @@ class Model:
             self.stats.compute_reserves()
             self.stats.compute_bad_debt()
             self.stats.compute_equity()
+            self.stats.compute_leverage()
             self.log.next()
             if self.config.N <= 2:
                 break
@@ -838,7 +881,7 @@ class Model:
         self.stats.define_output_directory(args.output)
         self.stats.define_output_file(args.save)
         self.stats.define_plot_format(args.plot_format)
-        self.log.interactive = True
+        self.log.interactive = args.log.upper() != 'DEBUG'
         self.run()
 
     @staticmethod

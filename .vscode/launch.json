@@ -21,7 +21,7 @@
             "request": "launch",
             "program": "interbank.py",
             "console": "integratedTerminal",
-            "args": " p=0.777 seed=123"
+            "args": " p=0.8 seed=5"
         }
     ]
 }

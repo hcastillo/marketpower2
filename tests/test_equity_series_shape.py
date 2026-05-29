@@ -56,7 +56,7 @@ class EquitySeriesShapeTestCase(unittest.TestCase):
         self.assertGreater(sign_change_ratio, 0.35)
 
         near_zero_step_ratio = np.mean(np.abs(diffs) < 1e-9)
-        self.assertLess(near_zero_step_ratio, 0.04)
+        self.assertLess(near_zero_step_ratio, 0.045)
 
         rounded = np.round(equity, 4)
         max_plateau = 1

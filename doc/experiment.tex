@@ -147,24 +147,24 @@ p \in [0.08, 1.0] \quad \text{(20 evenly spaced values)}
 \medskip
 \noindent\textbf{Additional metrics:}
 \begin{itemize}
-    \item \texttt{kurtosis\_bankruptcies}: Fisher kurtosis of the bankruptcy series
-    \item \texttt{hill\_bankruptcies}: Hill tail exponent of the upper tail
+    \item \texttt{kurtosis\_equity}: Fisher kurtosis of the total equity series $E_t$
+    \item \texttt{hill\_equity}: Hill tail exponent of the equity distribution
     \item \texttt{dist\_to\_default}: mean capital ratio $E/(D+E)$
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Metric 1: Kurtosis of Bankruptcies}
+\begin{frame}{Metric 1: Kurtosis of Equity}
 \centering
 \Large
 \[
 \text{Kurtosis} = \frac{1}{n} \sum_{t=1}^T
-\left( \frac{B_t - \bar{B}}{\sigma_B} \right)^4 - 3
+\left( \frac{E_t - \bar{E}}{\sigma_E} \right)^4 - 3
 \]
 
 \vspace{0.5em}
 \normalsize
 \noindent
-Where $B_t = \sum_i \mathbbm{1}_{\text{failed}}(i)$ at each step $t$.
+Where $E_t = \sum_i E_{i,t}$ is the total equity at each step $t$.
 
 \vspace{1em}
 \begin{columns}
@@ -172,34 +172,34 @@ Where $B_t = \sum_i \mathbbm{1}_{\text{failed}}(i)$ at each step $t$.
 \centering
 \textbf{Kurtosis $> 0$}\\
 Heavier tail\\
-Extreme events\\
-more likely
+Extreme equity\\
+fluctuations
 \end{column}
 \begin{column}{0.45\textwidth}
 \centering
 \textbf{Kurtosis $< 0$}\\
 Lighter tail\\
-More uniform\\
-distribution
+Equity stays near\\
+the mean
 \end{column}
 \end{columns}
 
 \vspace{0.5em}
-\noindent\textbf{Hypothesis:} High $p$ $\Rightarrow$ higher kurtosis.
+\noindent\textbf{Hypothesis:} High $p$ $\Rightarrow$ higher kurtosis (more extreme equity swings).
 \end{frame}
 
-\begin{frame}{Metric 2: Hill Exponent}
+\begin{frame}{Metric 2: Hill Exponent of Equity}
 \centering
 \Large
 \[
-H_k = \frac{1}{k} \sum_{i=1}^{k} \log\left( \frac{B_{(i)}}{B_{(k+1)}} \right)
+H_k = \frac{1}{k} \sum_{i=1}^{k} \log\left( \frac{E_{(i)}}{E_{(k+1)}} \right)
 \]
 
 \vspace{0.5em}
 \normalsize
 \noindent
-$B_{(1)} \geq B_{(2)} \geq \cdots \geq B_{(k+1)}$ are the sorted
-bankruptcy counts (upper tail).
+$E_{(1)} \geq E_{(2)} \geq \cdots \geq E_{(k+1)}$ are the sorted
+total equity values (upper tail = periods of peak capitalization).
 
 \vspace{1em}
 \begin{columns}
@@ -207,20 +207,22 @@ bankruptcy counts (upper tail).
 \centering
 \textbf{Low Hill}\\
 Heavy tail\\
-Higher probability\\
-of large failures
+System spends more\\
+time at peak equity\\
+(extreme stability)
 \end{column}
 \begin{column}{0.45\textwidth}
 \centering
 \textbf{High Hill}\\
 Light tail\\
-Large failures\\
-are rare
+Peak equity periods\\
+are transient\\
+(rapidly revert)
 \end{column}
 \end{columns}
 
 \vspace{0.5em}
-\noindent\textbf{Hypothesis:} High $p$ $\Rightarrow$ lower Hill exponent.
+\noindent\textbf{Hypothesis:} High $p$ $\Rightarrow$ lower Hill exponent (longer periods of extreme capitalization).
 \end{frame}
 
 \begin{frame}{Metric 3: Distance to Default}
@@ -281,20 +283,23 @@ If the dense network acts as a financial accelerator:
 \begin{column}{0.3\textwidth}
 \centering
 \includegraphics[width=\textwidth,height=4em]{example-image}\\
-\textbf{Kurtosis}\\
-Increasing with $p$
+\textbf{Kurtosis of equity}\\
+Increasing with $p$\\
+(more extreme swings)
 \end{column}
 \begin{column}{0.3\textwidth}
 \centering
 \includegraphics[width=\textwidth,height=4em]{example-image}\\
-\textbf{Hill}\\
-Decreasing with $p$
+\textbf{Hill of equity}\\
+Decreasing with $p$\\
+(longer peak periods)
 \end{column}
 \begin{column}{0.3\textwidth}
 \centering
 \includegraphics[width=\textwidth,height=4em]{example-image}\\
 \textbf{Distance to default}\\
-Decreasing with $p$
+Decreasing with $p$\\
+(higher leverage)
 \end{column}
 \end{columns}
 
@@ -306,14 +311,14 @@ the network into a vector of systemic insolvency.
 \begin{frame}{Summary}
 \centering
 \Large
-\textbf{Three metrics, one hypothesis}
+\textbf{Three equity-based metrics, one hypothesis}
 
 \vspace{1.5em}
 \normalsize
 \begin{enumerate}
-    \item \textbf{Kurtosis} $\uparrow$ $\Rightarrow$ extreme events more likely
-    \item \textbf{Hill} $\downarrow$ $\Rightarrow$ heavier tails
-    \item \textbf{Distance to default} $\downarrow$ $\Rightarrow$ greater fragility
+    \item \textbf{Equity kurtosis} $\uparrow$ $\Rightarrow$ more extreme equity fluctuations
+    \item \textbf{Equity Hill exponent} $\downarrow$ $\Rightarrow$ longer periods of extreme capitalization
+    \item \textbf{Capital ratio $\rho$} $\downarrow$ $\Rightarrow$ greater fragility
 \end{enumerate}
 
 \vspace{1.5em}

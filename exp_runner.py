@@ -157,7 +157,7 @@ class ExperimentRun:
                 pass
         for i in array_with_data:
             i = i.strip()
-            if i in ["t", "psi.1", "cross_psi_ir_lenders", "cross_psi_ir"]:
+            if i in ["t", "psi.1", "cross_psi_ir_lenders", "cross_psi_ir"] or i.endswith("_max_line") or i.endswith("_min_line"):
                 continue
             mean = []
             deviation_error = []
@@ -218,13 +218,26 @@ class ExperimentRun:
                         ax.set_yscale("log")
                         logarithm_plot = True
 
+            max_line_key = i + "_max_line"
+            min_line_key = i + "_min_line"
+            if max_line_key in array_with_data or min_line_key in array_with_data:
+                ir_series = i.startswith("ir")
+                max_color = "lightblue" if ir_series else "red"
+                min_color = "lightblue" if ir_series else "green"
+                if max_line_key in array_with_data:
+                    max_line_vals = [array_with_data[max_line_key][j][0] for j in range(len(array_with_data[max_line_key]))]
+                    ax.plot(array_with_x_values, max_line_vals, color=max_color, linestyle="--", linewidth=1, label="max")
+                if min_line_key in array_with_data:
+                    min_line_vals = [array_with_data[min_line_key][j][0] for j in range(len(array_with_data[min_line_key]))]
+                    ax.plot(array_with_x_values, min_line_vals, color=min_color, linestyle="--", linewidth=1, label="min")
+
             plt.title(title + (" (log)" if logarithm_plot else ""))
             if self.XTICKS_SCALED and self.NAME_OF_X_SERIES:
                 pass
             else:
                 ax.set_xticks(array_with_x_values)
                 ax.set_xticklabels(plot_x_values, rotation=270, fontsize=5)
-            if array_comparing:
+            if array_comparing or max_line_key in array_with_data or min_line_key in array_with_data:
                 plt.legend(loc="best")
             plt.savefig(f"{directory}{i}.png", dpi=300)
             plt.close(fig)
@@ -261,11 +274,16 @@ class ExperimentRun:
             return array_with_data, array_with_x_values
         return {}, []
 
+    def _data_keys(self, array_with_data):
+        return [k for k in array_with_data
+                if not k.endswith("_max_line") and not k.endswith("_min_line")]
+
     def save_csv(self, array_with_data, array_with_x_values, directory, filename="results.csv"):
+        keys = self._data_keys(array_with_data)
         with open(f"{directory}{filename}", "w", encoding="utf-8") as file_obj:
             file_obj.write(f"# MC={self.MC} N={self.N} T={self.T} {self.ALGORITHM.__name__}\n")
             file_obj.write(array_with_x_values[0].split("=")[0])
-            for j in array_with_data:
+            for j in keys:
                 file_obj.write(f";{j};std_{j}")
             file_obj.write("\n")
             for i in range(len(array_with_x_values)):
@@ -273,11 +291,12 @@ class ExperimentRun:
                 if " " in value_for_line:
                     value_for_line = value_for_line.split(" ")[0]
                 file_obj.write(f"{value_for_line}")
-                for j in array_with_data:
+                for j in keys:
                     file_obj.write(f";{array_with_data[j][i][0]};{array_with_data[j][i][1]}")
                 file_obj.write("\n")
 
     def save_gdt(self, array_with_data, array_with_x_values, directory, filename="results.gdt"):
+        keys = self._data_keys(array_with_data)
         element = lxml.builder.ElementMaker()
         gretl_data = element.gretldata
         description = element.description
@@ -293,10 +312,10 @@ class ExperimentRun:
                 setattr(model.config, item_config, None)
         description2 = str(model.config) + str(self.config)
 
-        variables_xml = variables(count=f"{2 * len(array_with_data) + 1}")
+        variables_xml = variables(count=f"{2 * len(keys) + 1}")
         variables_xml.append(variable(name=f"{array_with_x_values[0].split('=')[0]}", label=f"{description1}"))
         first = True
-        for j in array_with_data:
+        for j in keys:
             name = "leverage_" if j == "leverage" else j
             if first:
                 variables_xml.append(variable(name=f"{name}", label=f"{description2}"))
@@ -311,7 +330,7 @@ class ExperimentRun:
             if " " in value_for_line:
                 value_for_line = value_for_line.split(" ")[0]
             string_obs = f"{value_for_line}  "
-            for j in array_with_data:
+            for j in keys:
                 string_obs += f"{array_with_data[j][i][0]}  {array_with_data[j][i][1]}  "
             observations_xml.append(obs(string_obs))
         header_text = (

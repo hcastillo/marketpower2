@@ -26,7 +26,7 @@ class ValuesAfterExecutionTestCase(interbank_testclass.InterbankTest):
         self.model.replace_failed_banks()
         self.model.log.debug_bank(0)
         self.assertBank(0, C=self.model.config.C_i0 - self.model.config.r_i0 * self.model.config.D_i0, 
-                           D=self.model.config.D_i0, E=self.model.config.E_i0, L=self.model.config.L_i0, failed=False)
+                        D=self.model.config.D_i0, E=self.model.config.E_i0, L=self.model.config.L_i0, failed=False)
 
 
 if __name__ == '__main__':

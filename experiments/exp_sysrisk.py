@@ -3,7 +3,7 @@
 """
 Systemic Risk Experiment:
 - Vary p above 0.08 to analyze systemic risk at high connectivity
-- Compute kurtosis and Hill exponent of bankruptcy distribution
+- Compute kurtosis of equity and Hill exponent of equity losses
 - Monitor distance to default (equity buffer per bank)
 - Test: high connectivity -> heavier tails (higher kurtosis, lower Hill exponent)
 """
@@ -30,16 +30,16 @@ from interbank_lenderchange import LenderChange
 class SystemicRiskRun(exp_runner.ExperimentRun):
     N = 50
     T = 1000
-    MC = 30
+    MC = 20
 
     ALGORITHM = LenderChange
-    OUTPUT_DIRECTORY = "/experiments/exp_sysrisk_robust2"
+    OUTPUT_DIRECTORY = "/experiments/exp_sysrisk001"
 
     parameters = {
-        "p": np.linspace(0.08, 1.0, num=20),
+        "p":  np.linspace(0.00001, 0.1200001, num=12), # np.linspace(0.08, 1.0, num=20),
     }
 
-    config = {"robust2_ir": True}
+    config = {"robust_ir": False}
 
     LENGTH_FILENAME_PARAMETER = 5
     LENGTH_FILENAME_CONFIG = 0
@@ -230,22 +230,49 @@ class SystemicRiskRun(exp_runner.ExperimentRun):
                             results_to_plot[k] = [
                                 [mean_estimated, std_estimated]
                             ]
+                        if k in ("bankruptcies", "ir", "ir_weighted"):
+                            results_to_plot.setdefault(k + "_max_line", []).append(
+                                [numeric_result.max(), 0]
+                            )
+                            results_to_plot.setdefault(k + "_min_line", []).append(
+                                [numeric_result.min(), 0]
+                            )
 
-                    # --- kurtosis of bankruptcy distribution ---
+                    # --- kurtosis of equity distribution ---
                     kurt = self.excess_kurtosis(
-                        result_iteration["bankruptcies"]
+                        result_iteration["equity"]
                     )
                     results_to_plot.setdefault(
-                        "kurtosis_bankruptcies", []
+                        "kurtosis_equity", []
                     ).append([kurt, 0])
 
-                    # --- Hill exponent of bankruptcy tail ---
-                    hill = self.hill_estimator(
-                        result_iteration["bankruptcies"]
+                    # --- Hill exponent of equity LOSSES (negative equity changes) ---
+                    eq = pd.to_numeric(result_iteration["equity"], errors="coerce").values
+                    eq_mat = eq.reshape(self.MC, -1)
+                    diffs = np.diff(eq_mat, axis=1).ravel()
+                    losses = -diffs[diffs < 0]
+                    hill_h = self.hill_estimator(losses)
+                    hill_alpha = 1.0 / hill_h if hill_h and not np.isnan(hill_h) else np.nan
+                    results_to_plot.setdefault(
+                        "hill_equity", []
+                    ).append([hill_alpha, 0])
+
+                    # --- kurtosis of bad_debt distribution ---
+                    kurt_bd = self.excess_kurtosis(
+                        result_iteration["bad_debt"]
                     )
                     results_to_plot.setdefault(
-                        "hill_bankruptcies", []
-                    ).append([hill, 0])
+                        "kurtosis_bad_debt", []
+                    ).append([kurt_bd, 0])
+
+                    # --- Hill exponent of bad_debt (loss magnitudes) ---
+                    bd = pd.to_numeric(result_iteration["bad_debt"], errors="coerce").values
+                    bd_pos = bd[bd > 0]
+                    hill_h_bd = self.hill_estimator(bd_pos)
+                    hill_alpha_bd = 1.0 / hill_h_bd if hill_h_bd and not np.isnan(hill_h_bd) else np.nan
+                    results_to_plot.setdefault(
+                        "hill_bad_debt", []
+                    ).append([hill_alpha_bd, 0])
 
                     # --- distance to default (mean capital ratio E/(D+E)) ---
                     if "equity" in result_iteration and "deposits" in result_iteration:
