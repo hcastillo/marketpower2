@@ -104,7 +104,7 @@ remember picture, overlay,
 
 \node[statistics, anchor=north east, at=(ir.south)] (ir_stats) {
   asset\_i asset\_j \\
-  ir \\
+  ir  capacity\\
   prob\_bankruptcy };
 
 \node[statistics, right=0cm of ir_stats] (ir_stats2) {
@@ -171,10 +171,10 @@ remember picture, overlay,
 };
 
 \node[decision, right=of loans] (loans_text1) {
-  $bank.d>0$? };
+  $d^j_t>0$ };
 
 \node[decision, right=of loans_text1] (loans_text2) {
-  $bank.d \le lender.s$? };
+  $d \le \min(s^i_t, c^j_t)$ };
 
 \node[textnode, below=0cm of loans_text2] (loans_text5) {
     \begin{tabular}{l|l}
@@ -193,10 +193,15 @@ remember picture, overlay,
     \end{tabular} };
 
 \node[block, right=of loans_text2] (loans_text3) {
-  \texttt{$bank.rationing = d-s$}};
+  $l^j_t = \min(s^i_t, c^j_t)$\\
+  $rationing^j_t = d^j_t-\min(s^i_t, c^j_t)$};
 
 \node[block, below=0.3cm of loans_text3] (loans_text4) {
-  Obtain loan};
+  $l^j_t = d^j_t$ \\
+  $rationing^j_t= 0$};
+
+
+
 
 \draw[->] (loans) -- (loans_text1);
 \draw[->] (loans_text1) -- node[above, font=\scriptsize] {Yes: it's borrower}  (loans_text2);
@@ -208,35 +213,42 @@ remember picture, overlay,
 
 \node[textnode, right=of shock2] (shock2__text1) {
   Only for borrowers ($d^j_t>0$): \\
-  $ D^j_t = D^j_{t-1} \left( \mu + \omega U(0,1) \right )$  };
+  $ D^j_t = D^j_{t-1} \left( \mu + \omega U(0,1) \right )$ \\
+  ${d\mathit{2}}^j_t=| \Delta D^j_t + C^j_{t-1}|$  };
 
 
-\node[textnode, right=4cm of shock2__text1] (shock2__text2) {
+\node[textnode, right=3cm of shock2__text1] (shock2__text2) {
    \begin{tabular}{l|l}
         \multicolumn{2}{c}{\textbf{Borrower $j$}} \\ \hline
         $C^i_t \uparrow$ if $\Delta D>0$&  $D^i_t$\\
         $L^i_t$  & $E^i_t$ \\
-        $R^i_t \uparrow$ if $\Delta D>0$  & $d$ if $\Delta D<0$, $s$ if $\Delta D>0$ \\
-        & $rationing$ if $C - \Delta D<0$ \\
+        $R^i_t \uparrow$ if $\Delta D>0$  & $d\mathit{2}$ if $\Delta D^j_t<0$, $s\mathit{2}^j_t$ if $\Delta D^j_t>0$ \\
+        & $rationing^j_t$ if $C^j_t - \Delta D^j_t<0$ \\
 
    \end{tabular}  };
 
 
    
 \node[block, right=0.3cm of repayments] (repayments_text1) {
-  Pay \\ $rationing$ };
+  pay pending\\ $rationing^j_t$ };
 \node[block, right=0.3cm of repayments_text1] (repayments_text2) {
-  Pay \\ $d$ };
+  pay new shock \\ ${d\mathit{2}}^j_t$ if $\Delta D^j_t<0$};
 \node[block, right=0.3cm of repayments_text2] (repayments_text3) {
-  Pay \\ $loan+interest$};
-\node[decision, right=0.3cm of repayments_text3] (repayments_text4) {
-  $bank.L<0$?};
-\node[decision, below=0.2cm of repayments_text4] (repayments_text5) {
-  $bank.E<0$?};
+  pay to lender \\ ${l}^j_t + {interest}^j_t$};
+\node[decision, right=0.2cm of repayments_text3] (repayments_text4) {
+  $L^j_t<0$};
+\node[decision, right=0.2cm of repayments_text4] (repayments_text5) {
+  $E^j_t<0$};
 
-\node[textnode, left=0cm of repayments_text5] (repayments_text7) { \\
+\node[terminator, below=0.3cm of repayments_text4, xshift=1cm] (repayments_failed) {
+ failed };
+
+\draw[->] (repayments_text4) --node[font=\scriptsize] {Yes} (repayments_failed);
+\draw[->] (repayments_text5) --node[font=\scriptsize] {Yes} (repayments_failed);
+
+ \node[textnode, below=0.1cm of repayments_text2] (repayments_text7) { \\
 Equity lender $i$ (prev. + loans - bad debt + recovered): \\
-$E_t^i = E_{t-1}^i + \sum_{j} l_{t}^{i,j} r_{t}^{i,j} - \sum_{j \subseteq \theta_t^i} \left[ B_t^{i,j} - \tilde{L}_t^i \right]$
+$E_t^i = E_{t-1}^i + \sum_{j} l_{t}^{i,j} r_{t}^{i,j} - \sum_{j \subseteq \theta_t^i} \left[ B_t^{i,j} - \tilde{L}_t^j \right]$
     };
 
 
@@ -266,7 +278,7 @@ $E_t^i = E_{t-1}^i + \sum_{j} l_{t}^{i,j} r_{t}^{i,j} - \sum_{j \subseteq \theta
 % \draw[->] (repayments_text1) -- node[above, font=\scriptsize] {No: lender}  (repayments_text4);
 \draw[->] (repayments_text3) -- node[above, font=\scriptsize] {} (repayments_text4);
 \draw[->] (repayments_text2) -- node[above, font=\scriptsize] {}  (repayments_text3);
-\draw[->] (repayments_text4) -- node[below, font=\scriptsize] {No}  (repayments_text5);
+\draw[->] (repayments_text4) -- node[below, font=\scriptsize] {}  (repayments_text5);
 %\draw[->] (repayments_text5) -- node[below, font=\scriptsize] {}  (replacefailed.east);
 \draw[->] (repayments_text5) |- (replacefailed.east);
 
@@ -277,7 +289,7 @@ $E_t^i = E_{t-1}^i + \sum_{j} l_{t}^{i,j} r_{t}^{i,j} - \sum_{j \subseteq \theta
 
 
 \node[textnode, right=0.3cm of ir] (ir_text1) {
-  For borrowers: $\lambda ^j_t=\frac{d^j_t}{E^j_t}$ \quad $h^j_t=\frac{\lambda^j_t}{\lambda^{j \max}_t} $ \quad $p_t^j=\frac{E^j_t}{E^{j \max}_t}$\\
+  For borrowers: $\lambda ^j_t=\frac{d^j_t}{E^j_t}$ \quad \quad $h^j_t=\frac{\lambda^j_t}{\lambda^{j \max}_t} $ \\
   For lenders: $\psi^i_t = \frac{E^i_t}{E^{i \max}_t}$  };
 %\node[textnode, right=0.3cm of ir] (ir_text1) {
 %  \quad \quad \quad \quad \quad \quad  $p_t^j=\frac{E^j_t}{E^{max}_t}$ \\
@@ -286,12 +298,30 @@ $E_t^i = E_{t-1}^i + \sum_{j} l_{t}^{i,j} r_{t}^{i,j} - \sum_{j \subseteq \theta
 %  $h^j_t=\frac{\lambda^j_t}{\lambda^{max}_t} $ \quad \quad \quad \quad
 %  $\lambda ^j_t=\frac{L^j_t}{E^j_t}$
 % };
-\node[textnode, right=0.3cm of ir_text1] (ir_text2) {
+\node[textnode, right=0.3cm of ir_text1] (ir_text21) {
+  $p_t^j=\frac{E^j_t}{E^{j \max}_t}$ \\
+  prob. of surviving \\
+   };
+
+
+\node[textnode, below=0.1cm of ir_text21, xshift=2cm] (loans_capacity) {
+    $c_t^{i,j} = \begin{cases}
+(1 - h_t^j) A_t^j > 0, & \text{if } (i,j) \in V_t, \\
+0, & \text{otherwise}
+\end{cases}$};
+
+\node[textnode, right=0.3cm of ir_text21] (ir_text22) {
+  ${p_b}^j_t=1-{p_t^j}$ \\
+  prob. of bankruptcy \\
+   };
+
+
+   \node[textnode, right=0.3cm of ir_text22] (ir_text3) {
   $r_t^{i,j} = \frac{m}{p_t^j (1 - \psi^i_t)} $ 
  };
 
  \draw[->] (ir) -- (ir_text1);
-\draw[->, shorten >=1pt, shorten <=1pt] (ir_text1) -- (ir_text2);
+\draw[->, shorten >=1pt, shorten <=1pt] (ir_text22) -- (ir_text3);
 
 
 

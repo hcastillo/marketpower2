@@ -72,7 +72,7 @@
 # Basic usage of the model
 
 <figure id="fig:algorithm" data-latex-placement="htb">
-<img src="doc/alg-000001" />
+<img src="alg-1.png" />
 <figcaption>Sequence of steps: grey boxes indicates moments in which
 that statistic is obtained</figcaption>
 </figure>
@@ -236,9 +236,7 @@ classified as:
   is removed from this statistics. The special value `real_t` indicates
   which was the original time.
 
-- Individual is data obtained when we use **--detail_times** or
-  **--detail_banks**, and it stores **filename_detailed.gdt** of those
-  moments for all the banks individually or specific banks.
+- Individual is data that makes sense to be obtained for each bank.
 
 - Graphs are data obtained also in **filename.gdt**, but only we have a
   **LenderChange** algorithm with a random graph.

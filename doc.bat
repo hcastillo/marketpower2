@@ -2,7 +2,7 @@
  pdflatex algorithm.tex
  pdflatex README.tex
  del alg-000001.png
- pdftopng -r 300 algorithm.pdf alg
+ pdftoppm -png archivo.pdf alg
  cd ..
  pandoc doc\README.tex -t markdown+pipe_tables-simple_tables-multiline_tables -o README.md
 

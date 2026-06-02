@@ -816,9 +816,6 @@ class Model:
             self.log.next()
             if self.config.N <= 2:
                 break
-            #for i in range(self.config.N):
-            #    if self.capacity[i]>0 and (self.banks_d[i]-self.capacity[i])<=0:
-            #        print(f"{i} c={self.capacity[i]} d={self.banks_d[i]}")
         return self.finish()
     
     
