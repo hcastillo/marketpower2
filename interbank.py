@@ -41,7 +41,7 @@ class Config:
     # less omega, more negative is the shock
     mu: float = 0.7  # mi µ
     # 0.6 perfect symmetrical shock, 0.5 es eagerly negative shock    
-    omega: float = 0.55 # omega ω   
+    omega: float = 0.35 # omega ω   
 
     # banks initial parameters
     # L + C + R = D + E
@@ -54,7 +54,7 @@ class Config:
     r_i0: float = 0.02  # reserves
     
     # maximum interest rate that can be applied to a loan (to avoid infinite rates when bankruptcy probability is 0 or psi=1)
-    max_interest_rate: float = 1
+    max_interest_rate: float = 30
 
     # if false when a bank dies it's not replaced:
     allow_replacement_of_bankrupted : bool = True
@@ -417,7 +417,9 @@ class Model:
         #     else:
         #         self.haircut[i] = np.nan
         # 4. capacity:
-        self.capacity = np.where( self.d>0, (1 - self.haircut) * self.d, np.nan)
+        #TODO
+        self.capacity = np.where( self.d>0, self.d, np.nan)
+        #self.capacity = np.where( self.d>0, (1 - self.haircut) * self.d, np.nan)
         # for i in range(self.config.N):
         #     if self.d[i]>0 and max_leverage:
         #         self.capacity[i] = (1 - self.haircut[i]) * self.d[i]
@@ -447,7 +449,7 @@ class Model:
                 if denominator == 0 or np.isnan(denominator):
                     self.interest_rate[i] = self.config.max_interest_rate
                 else:
-                    self.interest_rate[i] = self.config.m / denominator
+                    self.interest_rate[i] = min(self.config.m / denominator, self.config.max_interest_rate)
             else:
                 self.interest_rate[i] = np.nan
 
