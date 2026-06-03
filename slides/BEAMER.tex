@@ -1,0 +1,37 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}
+  \definecolor{pantone2955}{RGB}{0,51,96}
+  \setbeamercolor{structure}{fg=pantone2955}
+
+  \setbeamertemplate{headline}{%
+    \leavevmode%
+    \hbox{%
+      \begin{beamercolorbox}[wd=.65\paperwidth,ht=2.5ex,dp=1.5ex,left]{section in head/foot}%
+        \usebeamerfont{section in head/foot}\insertsectionhead
+      \end{beamercolorbox}%
+      \begin{beamercolorbox}[wd=.35\paperwidth,ht=2.5ex,dp=1.5ex,right]{section in head/foot}%
+        \usebeamerfont{section in head/foot}%
+        \foreach \i in {1,...,8}{%
+          \ifnum\i=\insertsectionnumber%
+            \hyperlink{sec:\i}{\color{yellow}\bfseries\i\ }%
+          \else%
+            \hyperlink{sec:\i}{\color{white}\i\ }%
+          \fi%
+        }%
+      \end{beamercolorbox}%
+    }%
+    \vskip0pt%
+  }
+}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{tikz}
+
+\usepackage{times}
+\usepackage[T1]{fontenc}
+
+\input{BEAMER_doc}

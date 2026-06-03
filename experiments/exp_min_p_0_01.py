@@ -22,10 +22,10 @@ class MinPRun(exp_runner.ExperimentRun):
     MC = 10
 
     ALGORITHM = LenderChange
-    OUTPUT_DIRECTORY = "/experiments/exp_min_p_0_01"
+    OUTPUT_DIRECTORY = "/experiments/exp_min_p_0_01_greatm"
 
     parameters = {
-        "p":  np.linspace(0.00001, 0.12, num=12), # [0.01, 0.05, 0.07, 0.0075, 0.08, 0.09, 0.35, 0.5, 0.9] # np.linspace(0.00001, 1, num=10), #
+        "p":  np.linspace(0.00001, 0.12001, num=12), # [0.01, 0.05, 0.07, 0.0075, 0.08, 0.09, 0.35, 0.5, 0.9] # np.linspace(0.00001, 1, num=10), #
         
     }
 

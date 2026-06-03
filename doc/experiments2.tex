@@ -23,26 +23,15 @@
   },
 }
 
-\title{Análisis de Riesgo Sistémico\\en Redes Interbancarias}
-\subtitle{Experimentos variando la probabilidad de conexión $p$}
-\author{Proyecto Interbank}
+\title{experiments2}
+\subtitle{$p=[0.00001...0.12], cap = supply, mu=0.7, omega=0.15$}
+\author{Falta bad debt y quiebras por contagio}
 \date{\today}
 
 \begin{document}
 
 \begin{frame}
   \titlepage
-\end{frame}
-
-\begin{frame}{Configuración experimental}
-  \begin{itemize}
-    \item $N = 50$ bancos, $T = 1000$ pasos temporales
-    \item Monte Carlo: $MC = 10$ réplicas por valor de $p$
-    \item Parámetro de interés: probabilidad de conexión $p$
-    \item Rango explorado: $p \in [10^{-5},\ 0.12]$ (resolución fina)
-    \item Cap de tasa de interés: $\text{max\_ir} = 30$
-    \item Bancos quebrados reemplazados por moda de $C, E, D$ de bancos sobrevivientes
-  \end{itemize}
 \end{frame}
 
 % ============================================================
@@ -104,7 +93,7 @@
         \toprule
         $p$ & GCS \\
         \midrule
-        $10^{-5}$ & 1 \\
+        0.00001 & 1 \\
         0.011 & 5 \\
         \textbf{0.022} & \textbf{15} \\
         0.033 & 31 \\
@@ -121,13 +110,8 @@
 
 \begin{frame}{Componente Gigante: Interpretación}
   \begin{itemize}
-    \item En $p = p_c = 0.02$ ocurre la transición de percolación:
-    el componente gigante aparece y crece rápidamente.
-    \item Para $p \geq 0.055$: GCS $\approx 46$ bancos ($92\%$ del sistema).
+    \item Para $p \geq 0.055$: GCS $\approx 46$ bancos ($92\%$).
     \item Para $p \geq 0.08$: GCS $\approx 50$ ($\sim 100\%$).
-    \item \textbf{Conclusión:} la red está saturada de conexiones a partir
-    de $p \approx 0.05$, lo que explica la estabilización de todas las
-    demás métricas en ese punto.
   \end{itemize}
 \end{frame}
 
@@ -180,12 +164,8 @@
     \begin{column}{0.42\textwidth}
       \small
       \begin{itemize}
-        \item En $p \approx 0$, $ir = 30$ (cap máximo): muy pocos
-        prestamistas disponibles $\Rightarrow$ escasez extrema.
-        \item Caída brusca: $30 \to 3.0$ con $p = 0.01$.
         \item Estabilización: $ir \approx 1.65$ para $p \geq 0.05$.
-        \item \textbf{Mecanismo:} más conexiones $\Rightarrow$ más
-        prestamistas $\Rightarrow$ menor riesgo $\Rightarrow$ menor tasa.
+        
       \end{itemize}
       \vspace{0.3cm}
       \small
@@ -193,7 +173,7 @@
         \toprule
         $p$ & $ir$ \\
         \midrule
-        $10^{-5}$ & 30.00 \\
+        0.00001 & 30.00 \\
         0.011 & 2.99 \\
         0.022 & 1.92 \\
         0.033 & 1.82 \\
@@ -206,66 +186,12 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Tasa de Interés Ponderada ($ir_w$)}
-  \begin{columns}[T]
-    \begin{column}{0.55\textwidth}
-      \begin{figure}
-        \centering
-        \begin{tikzpicture}
-          \begin{axis}[
-            ylabel={$ir_w$},
-            ymin=0, ymax=35,
-          ]
-          \addplot[red marks] coordinates {
-            (0.00001, 30.00)
-            (0.01092, 2.82)
-            (0.02183, 1.71)
-            (0.03273, 1.62)
-            (0.04364, 1.56)
-            (0.05455, 1.59)
-            (0.06546, 1.50)
-            (0.07637, 1.47)
-            (0.08727, 1.52)
-            (0.09818, 1.49)
-            (0.10909, 1.40)
-            (0.12000, 1.46)
-          };
-          \addplot[black line] coordinates {
-            (0.00001, 30.00)
-            (0.01092, 2.82)
-            (0.02183, 1.71)
-            (0.03273, 1.62)
-            (0.04364, 1.56)
-            (0.05455, 1.59)
-            (0.06546, 1.50)
-            (0.07637, 1.47)
-            (0.08727, 1.52)
-            (0.09818, 1.49)
-            (0.10909, 1.40)
-            (0.12000, 1.46)
-          };
-          \end{axis}
-        \end{tikzpicture}
-      \end{figure}
-    \end{column}
-    \begin{column}{0.42\textwidth}
-      \small
-      \begin{itemize}
-        \item $ir_w$ ponderada por volumen de préstamos.
-        \item Misma tendencia que $ir$, valores ligeramente menores.
-        \item Para $p \geq 0.05$: $ir_w \approx 1.5$.
-        \item La ponderación suaviza la media, confirmando
-        que los préstamos grandes tienen tasas más bajas.
-      \end{itemize}
-    \end{column}
-  \end{columns}
-\end{frame}
 
 % ============================================================
 \section{Deuda Incobrable}
 % ============================================================
 
-\begin{frame}{Deuda Incobrable ($bad\_debt$)}
+\begin{frame}{($bad\_debt$)}
   \begin{columns}[T]
     \begin{column}{0.55\textwidth}
       \begin{figure}
@@ -308,16 +234,7 @@
       \end{figure}
     \end{column}
     \begin{column}{0.42\textwidth}
-      \small
-      \begin{itemize}
-        \item Crecimiento rápido en $p < 0.05$: $0 \to 1.2$.
-        \item Crecimiento lento pero continuo para $p > 0.05$:
-        $1.2 \to 1.37$.
-        \item \textbf{No se satura completamente:}
-        la deuda incobrable sigue aumentando suavemente
-        porque más conexiones generan más préstamos y
-        potencialmente más incumplimientos.
-      \end{itemize}
+            
     \end{column}
   \end{columns}
 \end{frame}
@@ -374,11 +291,503 @@
         \item Quiebras estables entre $6.8$ y $7.5$.
         \item Leve incremento al inicio ($p < 0.05$).
         \item Para $p > 0.05$: se estabiliza en $\sim 7.5$.
-        \item \textbf{Interpretación:} más conexiones facilitan
-        la propagación de quiebras (contagio), pero el
-        número de quiebras está limitado por la estructura
-        del modelo.
+        \item Me falta contagio
       \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\section{Causas de Quiebra}
+% ============================================================
+
+\begin{frame}{Bankruptcies ($\mu=0.7 \omega=0.35$): exp_min_p_0_01}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Quiebras por causa},
+            ymin=0, ymax=8,
+          ]
+          \addplot[only marks, mark=square*, red] coordinates {
+            (0.00001, 6.81)
+            (0.01092, 4.50)
+            (0.02183, 3.58)
+            (0.03273, 2.94)
+            (0.04364, 2.43)
+            (0.05455, 2.12)
+            (0.06546, 1.88)
+            (0.07637, 1.76)
+            (0.08727, 1.66)
+            (0.09818, 1.61)
+            (0.10909, 1.56)
+            (0.12000, 1.52)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 6.81)
+            (0.01092, 4.50)
+            (0.02183, 3.58)
+            (0.03273, 2.94)
+            (0.04364, 2.43)
+            (0.05455, 2.12)
+            (0.06546, 1.88)
+            (0.07637, 1.76)
+            (0.08727, 1.66)
+            (0.09818, 1.61)
+            (0.10909, 1.56)
+            (0.12000, 1.52)
+          };
+          \addplot[only marks, mark=*, red] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.04)
+            (0.02183, 0.11)
+            (0.03273, 0.18)
+            (0.04364, 0.22)
+            (0.05455, 0.26)
+            (0.06546, 0.28)
+            (0.07637, 0.28)
+            (0.08727, 0.29)
+            (0.09818, 0.32)
+            (0.10909, 0.30)
+            (0.12000, 0.33)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.04)
+            (0.02183, 0.11)
+            (0.03273, 0.18)
+            (0.04364, 0.22)
+            (0.05455, 0.26)
+            (0.06546, 0.28)
+            (0.07637, 0.28)
+            (0.08727, 0.29)
+            (0.09818, 0.32)
+            (0.10909, 0.30)
+            (0.12000, 0.33)
+          };
+          \addplot[only marks, mark=o, red] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 1.81)
+            (0.02183, 3.05)
+            (0.03273, 4.06)
+            (0.04364, 4.51)
+            (0.05455, 5.16)
+            (0.06546, 5.29)
+            (0.07637, 5.33)
+            (0.08727, 5.49)
+            (0.09818, 5.60)
+            (0.10909, 5.58)
+            (0.12000, 5.68)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 1.81)
+            (0.02183, 3.05)
+            (0.03273, 4.06)
+            (0.04364, 4.51)
+            (0.05455, 5.16)
+            (0.06546, 5.29)
+            (0.07637, 5.33)
+            (0.08727, 5.49)
+            (0.09818, 5.60)
+            (0.10909, 5.58)
+            (0.12000, 5.68)
+          };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      Tres canales de quiebra:
+      \begin{enumerate}
+        \item[] $\text{\tikz\draw[fill=red, draw=red] (0,0) rectangle (4pt,4pt);}$ \textbf{Racionamiento:} banco no obtuvo
+        fondos suficientes (decrece con $p$).
+        \item[] $\text{\tikz\fill[red] (2pt,2pt) circle (2pt);}$ \textbf{Contagio:} siempre mínimo.
+        \item[] $\text{\tikz\draw[red] (2pt,2pt) circle (2pt);}$ \textbf{Repago fallido:} borrower falla pero no arrastra al lender
+        (crece con $p$).
+      \end{enumerate}
+      \vspace{0.3cm}
+      \small
+      \begin{tabular}{lcc}
+        \toprule
+        $p$ & Rat. & Rep. \\
+        \midrule
+        0.00001 & 6.81 & 0.00 \\
+        0.011 & 4.50 & 1.81 \\
+        0.033 & 2.94 & 4.06 \\
+        \textbf{0.055} & \textbf{2.12} & \textbf{5.16} \\
+        0.087 & 1.66 & 5.49 \\
+        0.120 & 1.52 & 5.68 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Bankruptcies:  ($\mu=0.7 \omega=0.15$): exp_min_p_0_01_moreneg }
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Quiebras por causa},
+            ymin=0, ymax=16,
+          ]
+          \addplot[only marks, mark=square*, red] coordinates {
+            (0.00001, 13.24)
+            (0.01092, 8.55)
+            (0.02183, 7.06)
+            (0.03274, 6.06)
+            (0.04365, 5.13)
+            (0.05456, 4.50)
+            (0.06546, 4.04)
+            (0.07637, 3.77)
+            (0.08728, 3.49)
+            (0.09819, 3.32)
+            (0.10910, 3.21)
+            (0.12001, 3.18)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 13.24)
+            (0.01092, 8.55)
+            (0.02183, 7.06)
+            (0.03274, 6.06)
+            (0.04365, 5.13)
+            (0.05456, 4.50)
+            (0.06546, 4.04)
+            (0.07637, 3.77)
+            (0.08728, 3.49)
+            (0.09819, 3.32)
+            (0.10910, 3.21)
+            (0.12001, 3.18)
+          };
+          \addplot[only marks, mark=*, red] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.05)
+            (0.02183, 0.19)
+            (0.03274, 0.39)
+            (0.04365, 0.57)
+            (0.05456, 0.67)
+            (0.06546, 0.79)
+            (0.07637, 0.88)
+            (0.08728, 0.93)
+            (0.09819, 0.95)
+            (0.10910, 1.00)
+            (0.12001, 1.03)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.05)
+            (0.02183, 0.19)
+            (0.03274, 0.39)
+            (0.04365, 0.57)
+            (0.05456, 0.67)
+            (0.06546, 0.79)
+            (0.07637, 0.88)
+            (0.08728, 0.93)
+            (0.09819, 0.95)
+            (0.10910, 1.00)
+            (0.12001, 1.03)
+          };
+          \addplot[only marks, mark=o, red] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 2.58)
+            (0.02183, 4.55)
+            (0.03274, 6.39)
+            (0.04365, 7.62)
+            (0.05456, 8.21)
+            (0.06546, 8.81)
+            (0.07637, 9.28)
+            (0.08728, 9.57)
+            (0.09819, 9.64)
+            (0.10910, 9.94)
+            (0.12001, 10.03)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 2.58)
+            (0.02183, 4.55)
+            (0.03274, 6.39)
+            (0.04365, 7.62)
+            (0.05456, 8.21)
+            (0.06546, 8.81)
+            (0.07637, 9.28)
+            (0.08728, 9.57)
+            (0.09819, 9.64)
+            (0.10910, 9.94)
+            (0.12001, 10.03)
+          };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      
+      \vspace{0.3cm}
+      \small
+      \begin{tabular}{lcc}
+        \toprule
+        $p$ & Rat. & Rep. \\
+        \midrule
+        0.00001 & 13.24 & 0.00 \\
+        0.011 & 8.55 & 2.58 \\
+        0.033 & 6.06 & 6.39 \\
+        \textbf{0.055} & \textbf{4.50} & \textbf{8.21} \\
+        0.087 & 3.49 & 9.57 \\
+        0.120 & 3.18 & 10.03 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Bankruptcies:  ($\mu=0.7 \omega=0.05$): exp_min_p_0_01_moremoreneg }
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Quiebras por causa},
+            ymin=0, ymax=20,
+          ]
+          \addplot[only marks, mark=square*, red] coordinates {
+            (0.00001, 16.65)
+            (0.01092, 16.65)
+            (0.02183, 16.65)
+            (0.03274, 16.65)
+            (0.04365, 16.65)
+            (0.05456, 16.65)
+            (0.06546, 16.65)
+            (0.07637, 16.65)
+            (0.08728, 16.65)
+            (0.09819, 16.65)
+            (0.10910, 16.65)
+            (0.12001, 16.65)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 16.65)
+            (0.01092, 16.65)
+            (0.02183, 16.65)
+            (0.03274, 16.65)
+            (0.04365, 16.65)
+            (0.05456, 16.65)
+            (0.06546, 16.65)
+            (0.07637, 16.65)
+            (0.08728, 16.65)
+            (0.09819, 16.65)
+            (0.10910, 16.65)
+            (0.12001, 16.65)
+          };
+          \addplot[only marks, mark=*, red] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.00)
+            (0.02183, 0.00)
+            (0.03274, 0.00)
+            (0.04365, 0.00)
+            (0.05456, 0.00)
+            (0.06546, 0.00)
+            (0.07637, 0.00)
+            (0.08728, 0.00)
+            (0.09819, 0.00)
+            (0.10910, 0.00)
+            (0.12001, 0.00)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.00)
+            (0.02183, 0.00)
+            (0.03274, 0.00)
+            (0.04365, 0.00)
+            (0.05456, 0.00)
+            (0.06546, 0.00)
+            (0.07637, 0.00)
+            (0.08728, 0.00)
+            (0.09819, 0.00)
+            (0.10910, 0.00)
+            (0.12001, 0.00)
+          };
+          \addplot[only marks, mark=o, red] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.00)
+            (0.02183, 0.00)
+            (0.03274, 0.00)
+            (0.04365, 0.00)
+            (0.05456, 0.00)
+            (0.06546, 0.00)
+            (0.07637, 0.00)
+            (0.08728, 0.00)
+            (0.09819, 0.00)
+            (0.10910, 0.00)
+            (0.12001, 0.00)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.00)
+            (0.02183, 0.00)
+            (0.03274, 0.00)
+            (0.04365, 0.00)
+            (0.05456, 0.00)
+            (0.06546, 0.00)
+            (0.07637, 0.00)
+            (0.08728, 0.00)
+            (0.09819, 0.00)
+            (0.10910, 0.00)
+            (0.12001, 0.00)
+          };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      Tres canales de quiebra:
+      \begin{enumerate}
+        \item[] $\text{\tikz\draw[fill=red, draw=red] (0,0) rectangle (4pt,4pt);}$ \textbf{Racionamiento:} 16.65 (constante).
+        \item[] $\text{\tikz\fill[red] (2pt,2pt) circle (2pt);}$ \textbf{Contagio:} 0.00 (nulo).
+        \item[] $\text{\tikz\draw[red] (2pt,2pt) circle (2pt);}$ \textbf{Repago fallido:} 0.00 (nulo).
+      \end{enumerate}
+      \vspace{0.3cm}
+      \small
+      \textbf{Resultado anómalo:} todos los valores son
+      idénticos con $\sigma = 11.78$. Los shocks son tan
+      negativos que todos los bancos quiebran
+      inmediatamente y son reemplazados, creando un
+      equilibrio patológico sin variación con $p$.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Descomposición de Quiebras: screening alto}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Quiebras por causa},
+            ymin=0, ymax=8,
+          ]
+          \addplot[only marks, mark=square*, red] coordinates {
+            (0.00001, 6.81)
+            (0.01092, 4.40)
+            (0.02183, 3.55)
+            (0.03274, 2.82)
+            (0.04365, 2.38)
+            (0.05456, 2.10)
+            (0.06546, 1.88)
+            (0.07637, 1.71)
+            (0.08728, 1.62)
+            (0.09819, 1.57)
+            (0.10910, 1.52)
+            (0.12001, 1.50)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 6.81)
+            (0.01092, 4.40)
+            (0.02183, 3.55)
+            (0.03274, 2.82)
+            (0.04365, 2.38)
+            (0.05456, 2.10)
+            (0.06546, 1.88)
+            (0.07637, 1.71)
+            (0.08728, 1.62)
+            (0.09819, 1.57)
+            (0.10910, 1.52)
+            (0.12001, 1.50)
+          };
+          \addplot[only marks, mark=*, red] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.04)
+            (0.02183, 0.11)
+            (0.03274, 0.17)
+            (0.04365, 0.21)
+            (0.05456, 0.24)
+            (0.06546, 0.26)
+            (0.07637, 0.27)
+            (0.08728, 0.27)
+            (0.09819, 0.27)
+            (0.10910, 0.27)
+            (0.12001, 0.27)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 0.04)
+            (0.02183, 0.11)
+            (0.03274, 0.17)
+            (0.04365, 0.21)
+            (0.05456, 0.24)
+            (0.06546, 0.26)
+            (0.07637, 0.27)
+            (0.08728, 0.27)
+            (0.09819, 0.27)
+            (0.10910, 0.27)
+            (0.12001, 0.27)
+          };
+          \addplot[only marks, mark=o, red] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 1.78)
+            (0.02183, 3.14)
+            (0.03274, 4.00)
+            (0.04365, 4.58)
+            (0.05456, 4.90)
+            (0.06546, 5.28)
+            (0.07637, 5.41)
+            (0.08728, 5.47)
+            (0.09819, 5.48)
+            (0.10910, 5.69)
+            (0.12001, 5.71)
+          };
+          \addplot[black line] coordinates {
+            (0.00001, 0.00)
+            (0.01092, 1.78)
+            (0.02183, 3.14)
+            (0.03274, 4.00)
+            (0.04365, 4.58)
+            (0.05456, 4.90)
+            (0.06546, 5.28)
+            (0.07637, 5.41)
+            (0.08728, 5.47)
+            (0.09819, 5.48)
+            (0.10910, 5.69)
+            (0.12001, 5.71)
+          };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      Tres canales de quiebra:
+      \begin{enumerate}
+        \item[] $\text{\tikz\draw[fill=red, draw=red] (0,0) rectangle (4pt,4pt);}$ \textbf{Racionamiento:} 6.81 $\to$ 1.50 (decrece).
+        \item[] $\text{\tikz\fill[red] (2pt,2pt) circle (2pt);}$ \textbf{Contagio:} 0.00 $\to$ 0.27 (mínimo).
+        \item[] $\text{\tikz\draw[red] (2pt,2pt) circle (2pt);}$ \textbf{Repago fallido:} 0.00 $\to$ 5.71 (crece).
+      \end{enumerate}
+      \vspace{0.3cm}
+      \small
+      Con mayor screening ($m$), los bancos son más
+      Selectivos: conceden menos préstamos pero a
+      deudores más seguros. El contagio es aún menor
+      que en el caso base.
+      \vspace{0.3cm}
+      \begin{tabular}{lcc}
+        \toprule
+        $p$ & Rat. & Rep. \\
+        \midrule
+        0.00001 & 6.81 & 0.00 \\
+        0.011 & 4.40 & 1.78 \\
+        0.033 & 2.82 & 4.00 \\
+        \textbf{0.055} & \textbf{2.10} & \textbf{4.90} \\
+        0.087 & 1.62 & 5.47 \\
+        0.120 & 1.50 & 5.71 \\
+        \bottomrule
+      \end{tabular}
     \end{column}
   \end{columns}
 \end{frame}
@@ -387,7 +796,7 @@
 \section{Préstamos}
 % ============================================================
 
-\begin{frame}{Número de Préstamos Activos}
+\begin{frame}{Loans}
   \begin{columns}[T]
     \begin{column}{0.55\textwidth}
       \begin{figure}
@@ -436,69 +845,6 @@
         \item Meseta parcial en $p > 0.05$: $\sim 13$ préstamos.
         \item Solo $\sim 26\%$ de los bancos necesitan préstamos
         simultáneamente ($13/50$).
-        \item \textbf{Saturación:} la demanda de préstamos está
-        limitada por la estructura del modelo, no por la
-        oferta de crédito.
-      \end{itemize}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-% ============================================================
-\section{Patrimonio}
-% ============================================================
-
-\begin{frame}{Patrimonio Promedio ($equity$)}
-  \begin{columns}[T]
-    \begin{column}{0.55\textwidth}
-      \begin{figure}
-        \centering
-        \begin{tikzpicture}
-          \begin{axis}[
-            ylabel={$equity$},
-            ymin=40, ymax=65,
-          ]
-          \addplot[red marks] coordinates {
-            (0.00001, 46.80)
-            (0.01092, 56.83)
-            (0.02183, 56.57)
-            (0.03273, 53.61)
-            (0.04364, 54.85)
-            (0.05455, 54.29)
-            (0.06546, 55.25)
-            (0.07637, 56.10)
-            (0.08727, 56.10)
-            (0.09818, 53.61)
-            (0.10909, 54.91)
-            (0.12000, 54.18)
-          };
-          \addplot[black line] coordinates {
-            (0.00001, 46.80)
-            (0.01092, 56.83)
-            (0.02183, 56.57)
-            (0.03273, 53.61)
-            (0.04364, 54.85)
-            (0.05455, 54.29)
-            (0.06546, 55.25)
-            (0.07637, 56.10)
-            (0.08727, 56.10)
-            (0.09818, 53.61)
-            (0.10909, 54.91)
-            (0.12000, 54.18)
-          };
-          \end{axis}
-        \end{tikzpicture}
-      \end{figure}
-    \end{column}
-    \begin{column}{0.42\textwidth}
-      \small
-      \begin{itemize}
-        \item Salto inicial: $46.8 \to 56.8$ con $p = 0.01$
-        (más préstamos $\Rightarrow$ más ingresos por intereses).
-        \item Meseta ruidosa: $equity \approx 54$--$56$ para
-        $p > 0.01$.
-        \item El patrimonio no mejora con más conexiones
-        más allá de $p \approx 0.01$.
       \end{itemize}
     \end{column}
   \end{columns}
@@ -604,9 +950,6 @@
     \end{column}
   \end{columns}
   \vspace{0.3cm}
-  \small
-  Ambas métricas son \textbf{estables} para todo $p > 0.01$.
-  El leverage se mantiene en $\sim 0.19$ y la liquidez en $\sim 106$.
 \end{frame}
 
 % ============================================================
@@ -712,6 +1055,9 @@
     \item \textbf{Préstamos:} solo el $26\%$ de los bancos necesita
     financiamiento simultáneamente; la demanda, no la oferta,
     es el factor limitante.
+    \item \textbf{Causas de quiebra:} el racionamiento domina
+    a $p$ bajo; la incapacidad de repagar domina a $p$ alto.
+    El contagio es siempre mínimo ($<5\%$).
   \end{enumerate}
 \end{frame}
 
@@ -729,6 +1075,7 @@
       Quiebras & 6.8 $\to$ 7.5 & $\sim 7.5$ \\
       Num. préstamos & 0 $\to$ 11 & 11--14 \\
       $equity$ & 46.8 $\to$ 56.8 & 54--56 \\
+      Causa quiebra & Racionamiento & Repago fallido \\
       \bottomrule
     \end{tabular}
   \end{center}

@@ -1,9 +1,9 @@
-\beamer@sectionintoc {1}{Componente Gigante}{3}{0}{1}
-\beamer@sectionintoc {2}{Tasa de Interés}{5}{0}{2}
-\beamer@sectionintoc {3}{Deuda Incobrable}{7}{0}{3}
-\beamer@sectionintoc {4}{Quiebras}{8}{0}{4}
-\beamer@sectionintoc {5}{Préstamos}{9}{0}{5}
-\beamer@sectionintoc {6}{Patrimonio}{10}{0}{6}
-\beamer@sectionintoc {7}{Leverage y Liquidez}{11}{0}{7}
-\beamer@sectionintoc {8}{Medidas de Riesgo Extremo}{12}{0}{8}
-\beamer@sectionintoc {9}{Conclusiones}{13}{0}{9}
+\beamer@sectionintoc {1}{Componente Gigante}{2}{0}{1}
+\beamer@sectionintoc {2}{Tasa de Interés}{4}{0}{2}
+\beamer@sectionintoc {3}{Deuda Incobrable}{5}{0}{3}
+\beamer@sectionintoc {4}{Quiebras}{6}{0}{4}
+\beamer@sectionintoc {5}{Causas de Quiebra}{7}{0}{5}
+\beamer@sectionintoc {6}{Préstamos}{11}{0}{6}
+\beamer@sectionintoc {7}{Leverage y Liquidez}{12}{0}{7}
+\beamer@sectionintoc {8}{Medidas de Riesgo Extremo}{13}{0}{8}
+\beamer@sectionintoc {9}{Conclusiones}{14}{0}{9}

@@ -32,7 +32,7 @@ class Config:
     p = 0.8
 
     # screening costs:
-    m = 0.015
+    m = 0.025
 
     # seed applied for random values (set during initialize)
     seed: int = 5
@@ -40,7 +40,8 @@ class Config:
     # shocks parameters: mi=0.7 omega=0.6 for perfect balance
     # less omega, more negative is the shock
     mu: float = 0.7  # mi µ
-    # 0.6 perfect symmetrical shock, 0.5 es eagerly negative shock    
+    # 0.6 perfect symmetrical shock, 0.5 es eagerly negative shock  
+    # 0.35 was the original value for omega  
     omega: float = 0.35 # omega ω   
 
     # banks initial parameters

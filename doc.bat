@@ -1,10 +1,15 @@
  cd doc
  pdflatex algorithm.tex
- pdflatex README.tex
- del alg-000001.png
- pdftoppm -png archivo.pdf alg
+ del alg-1.png
+ pdftoppm -png algorithm.pdf alg
  cd ..
  pandoc doc\README.tex -t markdown+pipe_tables-simple_tables-multiline_tables -o README.md
+ pdflatex doc\README.tex
+ move README.pdf doc
+ del README.out
+ del README.log  
+ del readme.aux
+ del readme.dvi
 
 
 
