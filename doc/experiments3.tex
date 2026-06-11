@@ -1,0 +1,734 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+\usetheme{Madrid}
+\usecolortheme{whale}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{booktabs}
+\usepackage{amsmath}
+
+\pgfplotsset{
+  every axis/.style={
+    width=6.5cm, height=5cm,
+    grid=major, grid style={dashed,gray!40},
+    mark size=1.5pt,
+    xlabel={$p$},
+    xmin=0, xmax=0.12,
+    xticklabel style={/pgf/number format/fixed, /pgf/number format/precision=2},
+  },
+  black line/.style={
+    smooth, thick, black,
+  },
+}
+
+\title{Capacity with Haircut vs.\ Capacity=Supply (p=0..0.12)}
+\subtitle{exp_min_p_0_01\_capacity\_haircut vs.\ exp_min_p_0_01\_capacity\_supply}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Bankruptcies (exp_min_p_0_01\_capacity\_haircut)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+          ylabel={Rationing + Repayment},
+          ymin=0, ymax=8,
+          xmin=0, xmax=0.12,
+          xticklabel style={/pgf/number format/fixed, /pgf/number format/precision=2},
+        ]
+          \addplot[only marks, mark=square*, red] coordinates {
+            (0.00001,6.7931)            (0.01100,6.1768)            (0.02200,6.4994)            (0.03300,6.5926)            (0.04400,6.6995)            (0.05500,6.7234)            (0.06500,6.7342)            (0.07600,6.7453)            (0.08700,6.8621)            (0.09800,6.7748)            (0.10900,6.7942)            (0.12000,6.8065)
+          };
+          \addplot[black line] coordinates {
+            (0.00001,6.7931)            (0.01100,6.1768)            (0.02200,6.4994)            (0.03300,6.5926)            (0.04400,6.6995)            (0.05500,6.7234)            (0.06500,6.7342)            (0.07600,6.7453)            (0.08700,6.8621)            (0.09800,6.7748)            (0.10900,6.7942)            (0.12000,6.8065)
+          };
+          \addplot[only marks, mark=o, red] coordinates {
+            (0.00001,0.00)            (0.01100,0.24)            (0.02200,0.45)            (0.03300,0.57)            (0.04400,0.67)            (0.05500,0.73)            (0.06500,0.78)            (0.07600,0.80)            (0.08700,0.84)            (0.09800,0.84)            (0.10900,0.84)            (0.12000,0.86)
+          };
+          \addplot[black line] coordinates {
+            (0.00001,0.00)            (0.01100,0.24)            (0.02200,0.45)            (0.03300,0.57)            (0.04400,0.67)            (0.05500,0.73)            (0.06500,0.78)            (0.07600,0.80)            (0.08700,0.84)            (0.09800,0.84)            (0.10900,0.84)            (0.12000,0.86)
+          };
+        \end{axis}
+        \begin{axis}[
+          ylabel={Contagion},
+          ymin=0, ymax=0.4,
+          xmin=0, xmax=0.12,
+          axis y line*=right, axis x line=none,
+          ylabel near ticks,
+          yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=2},
+        ]
+          \addplot[only marks, mark=*, red] coordinates {
+            (0.00001,0.0000)            (0.01100,0.0128)            (0.02200,0.0313)            (0.03300,0.0443)            (0.04400,0.0573)            (0.05500,0.0634)            (0.06500,0.0700)            (0.07600,0.0750)            (0.08700,0.0811)            (0.09800,0.0836)            (0.10900,0.0802)            (0.12000,0.0824)
+          };
+          \addplot[black line] coordinates {
+            (0.00001,0.0000)            (0.01100,0.0128)            (0.02200,0.0313)            (0.03300,0.0443)            (0.04400,0.0573)            (0.05500,0.0634)            (0.06500,0.0700)            (0.07600,0.0750)            (0.08700,0.0811)            (0.09800,0.0836)            (0.10900,0.0802)            (0.12000,0.0824)
+          };
+        \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny
+      Bankruptcies:
+      \begin{enumerate}
+        \item[] $\blacksquare$ \textbf{Rationing.}
+        \item[] $\bullet$ \textbf{Contagion.}
+        \item[] $\circ$ \textbf{Failed repayment.}
+      \end{enumerate}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lccc}
+        \toprule
+        $p$ & Rat. & Cont. & Fail. \\
+        \midrule
+        0.00001 & 6.79 & 0.00 & 0.00 \\
+        0.011 & 6.18 & 0.01 & 0.24 \\
+        0.022 & 6.50 & 0.03 & 0.45 \\
+        0.033 & 6.59 & 0.04 & 0.57 \\
+        0.044 & 6.70 & 0.06 & 0.67 \\
+        \textbf{0.055} & \textbf{6.72} & \textbf{0.06} & \textbf{0.73} \\
+        0.065 & 6.73 & 0.07 & 0.78 \\
+        0.076 & 6.75 & 0.07 & 0.80 \\
+        0.087 & 6.86 & 0.08 & 0.84 \\
+        0.098 & 6.77 & 0.08 & 0.84 \\
+        0.109 & 6.79 & 0.08 & 0.84 \\
+        0.120 & 6.81 & 0.08 & 0.86 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Bankruptcies (exp_min_p_0_01\_capacity\_supply)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+        \begin{axis}[
+          ylabel={Rationing + Repayment},
+          ymin=0, ymax=8,
+          xmin=0, xmax=0.12,
+          xticklabel style={/pgf/number format/fixed, /pgf/number format/precision=2},
+        ]
+          \addplot[only marks, mark=square*, red] coordinates {
+            (0.00001,6.8100)            (0.01100,4.5205)            (0.02200,3.5637)            (0.03300,2.9455)            (0.04400,2.4434)            (0.05500,2.1255)            (0.06500,1.9197)            (0.07600,1.7491)            (0.08700,1.6717)            (0.09800,1.5865)            (0.10900,1.5685)            (0.12000,1.5052)
+          };
+          \addplot[black line] coordinates {
+            (0.00001,6.8100)            (0.01100,4.5205)            (0.02200,3.5637)            (0.03300,2.9455)            (0.04400,2.4434)            (0.05500,2.1255)            (0.06500,1.9197)            (0.07600,1.7491)            (0.08700,1.6717)            (0.09800,1.5865)            (0.10900,1.5685)            (0.12000,1.5052)
+          };
+          \addplot[only marks, mark=o, red] coordinates {
+            (0.00001,0.00)            (0.01100,0.34)            (0.02200,0.65)            (0.03300,0.89)            (0.04400,1.01)            (0.05500,1.19)            (0.06500,1.20)            (0.07600,1.24)            (0.08700,1.24)            (0.09800,1.33)            (0.10900,1.33)            (0.12000,1.33)
+          };
+          \addplot[black line] coordinates {
+            (0.00001,0.00)            (0.01100,0.34)            (0.02200,0.65)            (0.03300,0.89)            (0.04400,1.01)            (0.05500,1.19)            (0.06500,1.20)            (0.07600,1.24)            (0.08700,1.24)            (0.09800,1.33)            (0.10900,1.33)            (0.12000,1.33)
+          };
+        \end{axis}
+        \begin{axis}[
+          ylabel={Contagion},
+          ymin=0, ymax=0.4,
+          xmin=0, xmax=0.12,
+          axis y line*=right, axis x line=none,
+          ylabel near ticks,
+          yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=2},
+        ]
+          \addplot[only marks, mark=*, red] coordinates {
+            (0.00001,0.0000)            (0.01100,0.0432)            (0.02200,0.1122)            (0.03300,0.1741)            (0.04400,0.2124)            (0.05500,0.2578)            (0.06500,0.2717)            (0.07600,0.2814)            (0.08700,0.2847)            (0.09800,0.3184)            (0.10900,0.3110)            (0.12000,0.3177)
+          };
+          \addplot[black line] coordinates {
+            (0.00001,0.0000)            (0.01100,0.0432)            (0.02200,0.1122)            (0.03300,0.1741)            (0.04400,0.2124)            (0.05500,0.2578)            (0.06500,0.2717)            (0.07600,0.2814)            (0.08700,0.2847)            (0.09800,0.3184)            (0.10900,0.3110)            (0.12000,0.3177)
+          };
+        \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny
+      Bankruptcies:
+      \begin{enumerate}
+        \item[] $\blacksquare$ \textbf{Rationing.}
+        \item[] $\bullet$ \textbf{Contagion.}
+        \item[] $\circ$ \textbf{Failed repayment.}
+      \end{enumerate}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lccc}
+        \toprule
+        $p$ & Rat. & Cont. & Fail. \\
+        \midrule
+        0.00001 & 6.81 & 0.00 & 0.00 \\
+        0.011 & 4.52 & 0.04 & 0.34 \\
+        0.022 & 3.56 & 0.11 & 0.65 \\
+        0.033 & 2.95 & 0.17 & 0.89 \\
+        0.044 & 2.44 & 0.21 & 1.01 \\
+        \textbf{0.055} & \textbf{2.13} & \textbf{0.26} & \textbf{1.19} \\
+        0.065 & 1.92 & 0.27 & 1.20 \\
+        0.076 & 1.75 & 0.28 & 1.24 \\
+        0.087 & 1.67 & 0.28 & 1.24 \\
+        0.098 & 1.59 & 0.32 & 1.33 \\
+        0.109 & 1.57 & 0.31 & 1.33 \\
+        0.120 & 1.51 & 0.32 & 1.33 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Num. Loans: haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Num. Loans},
+            ymin=0, ymax=16,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,0.00)            (0.01100,4.42)            (0.02200,7.20)            (0.03300,9.16)            (0.04400,10.41)            (0.05500,11.27)            (0.06500,11.97)            (0.07600,12.37)            (0.08700,12.31)            (0.09800,12.81)            (0.10900,12.87)            (0.12000,12.99)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,0.00)            (0.01100,4.42)            (0.02200,7.20)            (0.03300,9.16)            (0.04400,10.41)            (0.05500,11.27)            (0.06500,11.97)            (0.07600,12.37)            (0.08700,12.31)            (0.09800,12.81)            (0.10900,12.87)            (0.12000,12.99)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,0.00)            (0.01100,4.66)            (0.02200,7.82)            (0.03300,9.51)            (0.04400,11.25)            (0.05500,11.34)            (0.06500,12.45)            (0.07600,12.99)            (0.08700,13.71)            (0.09800,13.03)            (0.10900,13.49)            (0.12000,13.71)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,0.00)            (0.01100,4.66)            (0.02200,7.82)            (0.03300,9.51)            (0.04400,11.25)            (0.05500,11.34)            (0.06500,12.45)            (0.07600,12.99)            (0.08700,13.71)            (0.09800,13.03)            (0.10900,13.49)            (0.12000,13.71)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 0.00 & 0.00 \\
+        0.011 & 4.42 & 4.66 \\
+        0.022 & 7.20 & 7.82 \\
+        0.033 & 9.16 & 9.51 \\
+        0.044 & 10.41 & 11.25 \\
+        \textbf{0.055} & \textbf{11.27} & \textbf{11.34} \\
+        0.065 & 11.97 & 12.45 \\
+        0.076 & 12.37 & 12.99 \\
+        0.087 & 12.31 & 13.71 \\
+        0.098 & 12.81 & 13.03 \\
+        0.109 & 12.87 & 13.49 \\
+        0.120 & 12.99 & 13.71 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Leverage: haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Leverage},
+            ymin=0.05, ymax=0.27,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,0.2390)            (0.01100,0.1764)            (0.02200,0.1762)            (0.03300,0.1771)            (0.04400,0.1790)            (0.05500,0.1746)            (0.06500,0.1762)            (0.07600,0.1701)            (0.08700,0.1738)            (0.09800,0.1702)            (0.10900,0.1697)            (0.12000,0.1749)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,0.2390)            (0.01100,0.1764)            (0.02200,0.1762)            (0.03300,0.1771)            (0.04400,0.1790)            (0.05500,0.1746)            (0.06500,0.1762)            (0.07600,0.1701)            (0.08700,0.1738)            (0.09800,0.1702)            (0.10900,0.1697)            (0.12000,0.1749)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,0.2401)            (0.01100,0.1772)            (0.02200,0.1812)            (0.03300,0.1966)            (0.04400,0.1897)            (0.05500,0.1961)            (0.06500,0.1939)            (0.07600,0.1892)            (0.08700,0.1772)            (0.09800,0.1927)            (0.10900,0.1918)            (0.12000,0.1852)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,0.2401)            (0.01100,0.1772)            (0.02200,0.1812)            (0.03300,0.1966)            (0.04400,0.1897)            (0.05500,0.1961)            (0.06500,0.1939)            (0.07600,0.1892)            (0.08700,0.1772)            (0.09800,0.1927)            (0.10900,0.1918)            (0.12000,0.1852)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 0.2390 & 0.2401 \\
+        0.011 & 0.1764 & 0.1772 \\
+        0.022 & 0.1762 & 0.1812 \\
+        0.033 & 0.1771 & 0.1966 \\
+        0.044 & 0.1790 & 0.1897 \\
+        \textbf{0.055} & \textbf{0.1746} & \textbf{0.1961} \\
+        0.065 & 0.1762 & 0.1939 \\
+        0.076 & 0.1701 & 0.1892 \\
+        0.087 & 0.1738 & 0.1772 \\
+        0.098 & 0.1702 & 0.1927 \\
+        0.109 & 0.1697 & 0.1918 \\
+        0.120 & 0.1749 & 0.1852 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Liquidity: haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Liquidity},
+            ymin=90, ymax=230,
+            scaled y ticks=false,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,109.2)            (0.01100,97.5)            (0.02200,101.0)            (0.03300,101.4)            (0.04400,102.5)            (0.05500,102.8)            (0.06500,102.3)            (0.07600,102.6)            (0.08700,104.2)            (0.09800,102.9)            (0.10900,103.2)            (0.12000,103.1)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,109.2)            (0.01100,97.5)            (0.02200,101.0)            (0.03300,101.4)            (0.04400,102.5)            (0.05500,102.8)            (0.06500,102.3)            (0.07600,102.6)            (0.08700,104.2)            (0.09800,102.9)            (0.10900,103.2)            (0.12000,103.1)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,109.1)            (0.01100,98.9)            (0.02200,100.9)            (0.03300,105.0)            (0.04400,103.1)            (0.05500,108.5)            (0.06500,105.8)            (0.07600,105.7)            (0.08700,103.6)            (0.09800,107.6)            (0.10900,106.4)            (0.12000,105.6)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,109.1)            (0.01100,98.9)            (0.02200,100.9)            (0.03300,105.0)            (0.04400,103.1)            (0.05500,108.5)            (0.06500,105.8)            (0.07600,105.7)            (0.08700,103.6)            (0.09800,107.6)            (0.10900,106.4)            (0.12000,105.6)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 109.2 & 109.1 \\
+        0.011 & 97.5 & 98.9 \\
+        0.022 & 101.0 & 100.9 \\
+        0.033 & 101.4 & 105.0 \\
+        0.044 & 102.5 & 103.1 \\
+        \textbf{0.055} & \textbf{102.8} & \textbf{108.5} \\
+        0.065 & 102.3 & 105.8 \\
+        0.076 & 102.6 & 105.7 \\
+        0.087 & 104.2 & 103.6 \\
+        0.098 & 102.9 & 107.6 \\
+        0.109 & 103.2 & 106.4 \\
+        0.120 & 103.1 & 105.6 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Deposits: haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Deposits},
+            ymin=260, ymax=460,
+            scaled y ticks=false,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,312.2)            (0.01100,277.4)            (0.02200,286.8)            (0.03300,288.0)            (0.04400,290.9)            (0.05500,291.0)            (0.06500,290.3)            (0.07600,290.4)            (0.08700,295.1)            (0.09800,291.2)            (0.10900,292.0)            (0.12000,292.1)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,312.2)            (0.01100,277.4)            (0.02200,286.8)            (0.03300,288.0)            (0.04400,290.9)            (0.05500,291.0)            (0.06500,290.3)            (0.07600,290.4)            (0.08700,295.1)            (0.09800,291.2)            (0.10900,292.0)            (0.12000,292.1)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,312.1)            (0.01100,281.7)            (0.02200,287.4)            (0.03300,298.9)            (0.04400,292.8)            (0.05500,307.6)            (0.06500,300.3)            (0.07600,299.4)            (0.08700,293.6)            (0.09800,304.8)            (0.10900,301.3)            (0.12000,299.2)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,312.1)            (0.01100,281.7)            (0.02200,287.4)            (0.03300,298.9)            (0.04400,292.8)            (0.05500,307.6)            (0.06500,300.3)            (0.07600,299.4)            (0.08700,293.6)            (0.09800,304.8)            (0.10900,301.3)            (0.12000,299.2)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 312.2 & 312.1 \\
+        0.011 & 277.4 & 281.7 \\
+        0.022 & 286.8 & 287.4 \\
+        0.033 & 288.0 & 298.9 \\
+        0.044 & 290.9 & 292.8 \\
+        \textbf{0.055} & \textbf{291.0} & \textbf{307.6} \\
+        0.065 & 290.3 & 300.3 \\
+        0.076 & 290.4 & 299.4 \\
+        0.087 & 295.1 & 293.6 \\
+        0.098 & 291.2 & 304.8 \\
+        0.109 & 292.0 & 301.3 \\
+        0.120 & 292.1 & 299.2 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Equity Lenders: haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Equity Lenders},
+            ymin=34, ymax=50,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,37.48)            (0.01100,36.52)            (0.02200,37.74)            (0.03300,37.26)            (0.04400,37.11)            (0.05500,38.03)            (0.06500,37.08)            (0.07600,37.99)            (0.08700,37.86)            (0.09800,37.95)            (0.10900,37.87)            (0.12000,37.39)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,37.48)            (0.01100,36.52)            (0.02200,37.74)            (0.03300,37.26)            (0.04400,37.11)            (0.05500,38.03)            (0.06500,37.08)            (0.07600,37.99)            (0.08700,37.86)            (0.09800,37.95)            (0.10900,37.87)            (0.12000,37.39)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,37.45)            (0.01100,36.71)            (0.02200,36.48)            (0.03300,36.24)            (0.04400,35.84)            (0.05500,37.21)            (0.06500,36.37)            (0.07600,36.44)            (0.08700,36.26)            (0.09800,36.75)            (0.10900,36.15)            (0.12000,36.65)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,37.45)            (0.01100,36.71)            (0.02200,36.48)            (0.03300,36.24)            (0.04400,35.84)            (0.05500,37.21)            (0.06500,36.37)            (0.07600,36.44)            (0.08700,36.26)            (0.09800,36.75)            (0.10900,36.15)            (0.12000,36.65)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 37.48 & 37.45 \\
+        0.011 & 36.52 & 36.71 \\
+        0.022 & 37.74 & 36.48 \\
+        0.033 & 37.26 & 36.24 \\
+        0.044 & 37.11 & 35.84 \\
+        \textbf{0.055} & \textbf{38.03} & \textbf{37.21} \\
+        0.065 & 37.08 & 36.37 \\
+        0.076 & 37.99 & 36.44 \\
+        0.087 & 37.86 & 36.26 \\
+        0.098 & 37.95 & 36.75 \\
+        0.109 & 37.87 & 36.15 \\
+        0.120 & 37.39 & 36.65 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Equity Borrowers: haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Equity Borrowers},
+            ymin=0, ymax=28,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,9.33)            (0.01100,19.43)            (0.02200,19.78)            (0.03300,19.58)            (0.04400,19.36)            (0.05500,20.15)            (0.06500,20.17)            (0.07600,21.32)            (0.08700,20.69)            (0.09800,21.36)            (0.10900,21.46)            (0.12000,20.20)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,9.33)            (0.01100,19.43)            (0.02200,19.78)            (0.03300,19.58)            (0.04400,19.36)            (0.05500,20.15)            (0.06500,20.17)            (0.07600,21.32)            (0.08700,20.69)            (0.09800,21.36)            (0.10900,21.46)            (0.12000,20.20)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,9.35)            (0.01100,19.98)            (0.02200,19.97)            (0.03300,16.97)            (0.04400,18.02)            (0.05500,17.60)            (0.06500,17.30)            (0.07600,18.66)            (0.08700,21.02)            (0.09800,17.75)            (0.10900,18.04)            (0.12000,19.19)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,9.35)            (0.01100,19.98)            (0.02200,19.97)            (0.03300,16.97)            (0.04400,18.02)            (0.05500,17.60)            (0.06500,17.30)            (0.07600,18.66)            (0.08700,21.02)            (0.09800,17.75)            (0.10900,18.04)            (0.12000,19.19)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 9.33 & 9.35 \\
+        0.011 & 19.43 & 19.98 \\
+        0.022 & 19.78 & 19.97 \\
+        0.033 & 19.58 & 16.97 \\
+        0.044 & 19.36 & 18.02 \\
+        \textbf{0.055} & \textbf{20.15} & \textbf{17.60} \\
+        0.065 & 20.17 & 17.30 \\
+        0.076 & 21.32 & 18.66 \\
+        0.087 & 20.69 & 21.02 \\
+        0.098 & 21.36 & 17.75 \\
+        0.109 & 21.46 & 18.04 \\
+        0.120 & 20.20 & 19.19 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Market Power ($\psi$): haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={market power $\psi$},
+            ymin=0.25, ymax=1.05,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,0.9875)            (0.01100,0.4823)            (0.02200,0.4563)            (0.03300,0.4577)            (0.04400,0.4754)            (0.05500,0.4503)            (0.06500,0.4626)            (0.07600,0.4288)            (0.08700,0.4438)            (0.09800,0.4280)            (0.10900,0.4348)            (0.12000,0.4502)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,0.9875)            (0.01100,0.4823)            (0.02200,0.4563)            (0.03300,0.4577)            (0.04400,0.4754)            (0.05500,0.4503)            (0.06500,0.4626)            (0.07600,0.4288)            (0.08700,0.4438)            (0.09800,0.4280)            (0.10900,0.4348)            (0.12000,0.4502)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,0.9874)            (0.01100,0.4752)            (0.02200,0.4782)            (0.03300,0.5364)            (0.04400,0.5018)            (0.05500,0.5197)            (0.06500,0.5064)            (0.07600,0.5116)            (0.08700,0.4595)            (0.09800,0.5070)            (0.10900,0.4949)            (0.12000,0.4785)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,0.9874)            (0.01100,0.4752)            (0.02200,0.4782)            (0.03300,0.5364)            (0.04400,0.5018)            (0.05500,0.5197)            (0.06500,0.5064)            (0.07600,0.5116)            (0.08700,0.4595)            (0.09800,0.5070)            (0.10900,0.4949)            (0.12000,0.4785)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 0.9875 & 0.9874 \\
+        0.011 & 0.4823 & 0.4752 \\
+        0.022 & 0.4563 & 0.4782 \\
+        0.033 & 0.4577 & 0.5364 \\
+        0.044 & 0.4754 & 0.5018 \\
+        \textbf{0.055} & \textbf{0.4503} & \textbf{0.5197} \\
+        0.065 & 0.4626 & 0.5064 \\
+        0.076 & 0.4288 & 0.5116 \\
+        0.087 & 0.4438 & 0.4595 \\
+        0.098 & 0.4280 & 0.5070 \\
+        0.109 & 0.4348 & 0.4949 \\
+        0.120 & 0.4502 & 0.4785 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Interest Rate ($ir$): haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Interest Rate ($ir$)},
+            ymin=0, ymax=35,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,29.6)            (0.01100,2.7)            (0.02200,1.9)            (0.03300,1.7)            (0.04400,1.7)            (0.05500,1.7)            (0.06500,1.7)            (0.07600,1.7)            (0.08700,1.6)            (0.09800,1.7)            (0.10900,1.7)            (0.12000,1.6)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,29.6)            (0.01100,2.7)            (0.02200,1.9)            (0.03300,1.7)            (0.04400,1.7)            (0.05500,1.7)            (0.06500,1.7)            (0.07600,1.7)            (0.08700,1.6)            (0.09800,1.7)            (0.10900,1.7)            (0.12000,1.6)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,30.0)            (0.01100,2.9)            (0.02200,2.0)            (0.03300,1.8)            (0.04400,1.7)            (0.05500,1.8)            (0.06500,1.7)            (0.07600,1.6)            (0.08700,1.7)            (0.09800,1.7)            (0.10900,1.6)            (0.12000,1.6)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,30.0)            (0.01100,2.9)            (0.02200,2.0)            (0.03300,1.8)            (0.04400,1.7)            (0.05500,1.8)            (0.06500,1.7)            (0.07600,1.6)            (0.08700,1.7)            (0.09800,1.7)            (0.10900,1.6)            (0.12000,1.6)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 29.6 & 30.0 \\
+        0.011 & 2.7 & 2.9 \\
+        0.022 & 1.9 & 2.0 \\
+        0.033 & 1.7 & 1.8 \\
+        0.044 & 1.7 & 1.7 \\
+        \textbf{0.055} & \textbf{1.7} & \textbf{1.8} \\
+        0.065 & 1.7 & 1.7 \\
+        0.076 & 1.7 & 1.6 \\
+        0.087 & 1.6 & 1.7 \\
+        0.098 & 1.7 & 1.7 \\
+        0.109 & 1.7 & 1.6 \\
+        0.120 & 1.6 & 1.6 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Bad Debt: haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Bad Debt},
+            ymin=0, ymax=1.2,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,0.00)            (0.01100,0.24)            (0.02200,0.45)            (0.03300,0.57)            (0.04400,0.67)            (0.05500,0.73)            (0.06500,0.78)            (0.07600,0.80)            (0.08700,0.84)            (0.09800,0.84)            (0.10900,0.84)            (0.12000,0.86)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,0.00)            (0.01100,0.24)            (0.02200,0.45)            (0.03300,0.57)            (0.04400,0.67)            (0.05500,0.73)            (0.06500,0.78)            (0.07600,0.80)            (0.08700,0.84)            (0.09800,0.84)            (0.10900,0.84)            (0.12000,0.86)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,0.00)            (0.01100,0.34)            (0.02200,0.65)            (0.03300,0.89)            (0.04400,1.01)            (0.05500,1.19)            (0.06500,1.20)            (0.07600,1.24)            (0.08700,1.24)            (0.09800,1.33)            (0.10900,1.33)            (0.12000,1.33)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,0.00)            (0.01100,0.34)            (0.02200,0.65)            (0.03300,0.89)            (0.04400,1.01)            (0.05500,1.19)            (0.06500,1.20)            (0.07600,1.24)            (0.08700,1.24)            (0.09800,1.33)            (0.10900,1.33)            (0.12000,1.33)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 0.00 & 0.00 \\
+        0.011 & 0.24 & 0.34 \\
+        0.022 & 0.45 & 0.65 \\
+        0.033 & 0.57 & 0.89 \\
+        0.044 & 0.67 & 1.01 \\
+        \textbf{0.055} & \textbf{0.73} & \textbf{1.19} \\
+        0.065 & 0.78 & 1.20 \\
+        0.076 & 0.80 & 1.24 \\
+        0.087 & 0.84 & 1.24 \\
+        0.098 & 0.84 & 1.33 \\
+        0.109 & 0.84 & 1.33 \\
+        0.120 & 0.86 & 1.33 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Loans: haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Loans},
+            ymin=0, ymax=5,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,0.00)            (0.01100,0.92)            (0.02200,1.59)            (0.03300,1.98)            (0.04400,2.28)            (0.05500,2.45)            (0.06500,2.56)            (0.07600,2.63)            (0.08700,2.76)            (0.09800,2.74)            (0.10900,2.75)            (0.12000,2.80)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,0.00)            (0.01100,0.92)            (0.02200,1.59)            (0.03300,1.98)            (0.04400,2.28)            (0.05500,2.45)            (0.06500,2.56)            (0.07600,2.63)            (0.08700,2.76)            (0.09800,2.74)            (0.10900,2.75)            (0.12000,2.80)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,0.00)            (0.01100,1.40)            (0.02200,2.40)            (0.03300,3.18)            (0.04400,3.49)            (0.05500,4.02)            (0.06500,4.08)            (0.07600,4.18)            (0.08700,4.16)            (0.09800,4.42)            (0.10900,4.41)            (0.12000,4.38)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,0.00)            (0.01100,1.40)            (0.02200,2.40)            (0.03300,3.18)            (0.04400,3.49)            (0.05500,4.02)            (0.06500,4.08)            (0.07600,4.18)            (0.08700,4.16)            (0.09800,4.42)            (0.10900,4.41)            (0.12000,4.38)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 0.00 & 0.00 \\
+        0.011 & 0.92 & 1.40 \\
+        0.022 & 1.59 & 2.40 \\
+        0.033 & 1.98 & 3.18 \\
+        0.044 & 2.28 & 3.49 \\
+        \textbf{0.055} & \textbf{2.45} & \textbf{4.02} \\
+        0.065 & 2.56 & 4.08 \\
+        0.076 & 2.63 & 4.18 \\
+        0.087 & 2.76 & 4.16 \\
+        0.098 & 2.74 & 4.42 \\
+        0.109 & 2.75 & 4.41 \\
+        0.120 & 2.80 & 4.38 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Prob. of Bankruptcy ($p_b$): haircut ($\blacksquare$) vs.\ supply ($\circ$)}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \begin{figure}
+        \centering
+        \begin{tikzpicture}
+          \begin{axis}[
+            ylabel={Prob. of Bankruptcy ($p_b$)},
+            ymin=0, ymax=0.8,
+          ]
+            \addplot[only marks, mark=square*, red] coordinates {
+              (0.00001,0.227)            (0.01100,0.657)            (0.02200,0.651)            (0.03300,0.672)            (0.04400,0.664)            (0.05500,0.668)            (0.06500,0.666)            (0.07600,0.687)            (0.08700,0.683)            (0.09800,0.689)            (0.10900,0.695)            (0.12000,0.666)
+            };
+            \addplot[black line] coordinates {
+              (0.00001,0.227)            (0.01100,0.657)            (0.02200,0.651)            (0.03300,0.672)            (0.04400,0.664)            (0.05500,0.668)            (0.06500,0.666)            (0.07600,0.687)            (0.08700,0.683)            (0.09800,0.689)            (0.10900,0.695)            (0.12000,0.666)
+            };
+            \addplot[only marks, mark=o, red] coordinates {
+              (0.00001,0.228)            (0.01100,0.691)            (0.02200,0.652)            (0.03300,0.636)            (0.04400,0.661)            (0.05500,0.619)            (0.06500,0.647)            (0.07600,0.650)            (0.08700,0.678)            (0.09800,0.664)            (0.10900,0.657)            (0.12000,0.673)
+            };
+            \addplot[black line, dashed] coordinates {
+              (0.00001,0.228)            (0.01100,0.691)            (0.02200,0.652)            (0.03300,0.636)            (0.04400,0.661)            (0.05500,0.619)            (0.06500,0.647)            (0.07600,0.650)            (0.08700,0.678)            (0.09800,0.664)            (0.10900,0.657)            (0.12000,0.673)
+            };
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{2pt}
+      \begin{tabular}{lrr}
+        \toprule
+        $p$ & haircut & supply \\
+        \midrule
+        0.00001 & 0.227 & 0.228 \\
+        0.011 & 0.657 & 0.691 \\
+        0.022 & 0.651 & 0.652 \\
+        0.033 & 0.672 & 0.636 \\
+        0.044 & 0.664 & 0.661 \\
+        \textbf{0.055} & \textbf{0.668} & \textbf{0.619} \\
+        0.065 & 0.666 & 0.647 \\
+        0.076 & 0.687 & 0.650 \\
+        0.087 & 0.683 & 0.678 \\
+        0.098 & 0.689 & 0.664 \\
+        0.109 & 0.695 & 0.657 \\
+        0.120 & 0.666 & 0.673 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}

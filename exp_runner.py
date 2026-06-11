@@ -135,6 +135,9 @@ class ExperimentRun:
 
     def plot(self, array_with_data, array_with_x_values, title_x, directory,
              array_comparing=None, array_comparing2=None):
+        if getattr(self, 'plot_removing_first', False) and len(array_with_x_values) > 1:
+            array_with_x_values = array_with_x_values[1:]
+            array_with_data = {k: v[1:] for k, v in array_with_data.items()}
         plot_x_values = []
         for j in range(len(array_with_x_values)):
             plot_x_values.append(array_with_x_values[j] if (j % ExperimentRun.XTICKS_DIVISOR == 0) else " ")
@@ -835,6 +838,8 @@ class Runner:
                                  help="Execute the experiment in opposite order")
         self.parser.add_argument("--stats_market", default=False, action=argparse.BooleanOptionalAction,
                                  help="Generate also resultsb.txt|resultsb.gdt")
+        self.parser.add_argument("--plot_removing_first", default=False, action=argparse.BooleanOptionalAction,
+                                 help="Remove the first x-axis value from plots")
 
     def do(self):
         args = self.parser.parse_args()
@@ -842,6 +847,7 @@ class Runner:
         if args.clear_results:
             experiment.clear_results()
         experiment.error_bar = args.errorbar
+        experiment.plot_removing_first = args.plot_removing_first
         if args.listnames:
             experiment.listnames()
         elif args.do:

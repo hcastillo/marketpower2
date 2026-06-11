@@ -14,7 +14,7 @@
       \end{beamercolorbox}%
       \begin{beamercolorbox}[wd=.35\paperwidth,ht=2.5ex,dp=1.5ex,right]{section in head/foot}%
         \usebeamerfont{section in head/foot}%
-        \foreach \i in {1,...,8}{%
+        \foreach \i in {1,...,7}{%
           \ifnum\i=\insertsectionnumber%
             \hyperlink{sec:\i}{\color{yellow}\bfseries\i\ }%
           \else%
@@ -30,6 +30,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{booktabs}
 
 \usepackage{times}
 \usepackage[T1]{fontenc}
