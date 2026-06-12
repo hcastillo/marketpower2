@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
 # coding: utf-8
 """
 Executor base class for the interbank model.
@@ -42,20 +42,23 @@ class ExperimentRun:
     MAX_EXECUTIONS_OF_MODELS_OUTLIERS = 10
 
     STYLE = "-"
-    MARKER = "o"
-    COLOR = "blue"
+    MARKER = "s"
+    COLOR = "black"
+    MARKER_COLOR = "red"
 
     COMPARING_DATA = ""
     COMPARING_LABEL = "Comparing"
     COMPARING_STYLE = "--"
-    COMPARING_COLOR = "red"
+    COMPARING_COLOR = "black"
     COMPARING_MARKER = "o"
+    COMPARING_MARKER_COLOR = "red"
 
     COMPARING_DATA2 = ""
     COMPARING_LABEL2 = "Comparing2"
     COMPARING_STYLE2 = ":"
-    COMPARING_COLOR2 = "green"
-    COMPARING_MARKER2 = "o"
+    COMPARING_COLOR2 = "black"
+    COMPARING_MARKER2 = "D"
+    COMPARING_MARKER2_COLOR = "red"
 
     XTICKS_DIVISOR = 1
     XTICKS_SCALED = False
@@ -117,8 +120,8 @@ class ExperimentRun:
         if len(children) == 3:
             for variable in children[1].getchildren():
                 column_name = variable.values()[0].strip()
-                if column_name == "leverage_":
-                    column_name = "leverage"
+                if column_name == "leverage_" or column_name == "std_leverage_":
+                    column_name = "leverage" if column_name == "leverage_" else "std_leverage"
                 columns.append(column_name)
                 if "parent" in variable.keys():
                     columns_to_remove.append(column_name)
@@ -188,11 +191,14 @@ class ExperimentRun:
             if self.error_bar:
                 ax.errorbar(array_with_x_values, mean, yerr=deviation_error,
                             linestyle=self.STYLE, marker=self.MARKER, color=self.COLOR,
+                            markerfacecolor=self.MARKER_COLOR, markeredgecolor=self.MARKER_COLOR,
+                            ecolor='gray', capsize=2,
                             label=self.NAME_OF_X_SERIES if self.NAME_OF_X_SERIES
                             else self.ALGORITHM.__name__ if array_comparing else "")
             else:
                 ax.plot(array_with_x_values, mean,
                         linestyle=self.STYLE, marker=self.MARKER, color=self.COLOR,
+                        markerfacecolor=self.MARKER_COLOR, markeredgecolor=self.MARKER_COLOR,
                         label=self.NAME_OF_X_SERIES if self.NAME_OF_X_SERIES
                         else self.ALGORITHM.__name__ if array_comparing else "")
             logarithm_plot = False
@@ -200,10 +206,12 @@ class ExperimentRun:
                 if len(mean_comparing) == 1:
                     ax.plot(0, mean_comparing, linestyle=self.COMPARING_STYLE,
                             marker=self.COMPARING_MARKER, color=self.COMPARING_COLOR,
+                            markerfacecolor=self.COMPARING_MARKER_COLOR, markeredgecolor=self.COMPARING_MARKER_COLOR,
                             label=self.COMPARING_LABEL)
                 else:
                     ax.plot(array_with_x_values, mean_comparing, linestyle=self.COMPARING_STYLE,
                             marker=self.COMPARING_MARKER, color=self.COMPARING_COLOR,
+                            markerfacecolor=self.COMPARING_MARKER_COLOR, markeredgecolor=self.COMPARING_MARKER_COLOR,
                             label=self.COMPARING_LABEL)
                 if abs(mean[0] - mean_comparing[0]) > 1e6 and abs(mean[-1] - mean_comparing[-1]) > 1e6:
                     ax.set_yscale("log")
@@ -212,10 +220,12 @@ class ExperimentRun:
                     if len(mean_comparing2) == 1:
                         ax.plot(0, mean_comparing2, linestyle=self.COMPARING_STYLE2,
                                 marker=self.COMPARING_MARKER2, color=self.COMPARING_COLOR2,
+                                markerfacecolor=self.COMPARING_MARKER2_COLOR, markeredgecolor=self.COMPARING_MARKER2_COLOR,
                                 label=self.COMPARING_LABEL2)
                     else:
                         ax.plot(array_with_x_values, mean_comparing2, linestyle=self.COMPARING_STYLE2,
                                 marker=self.COMPARING_MARKER2, color=self.COMPARING_COLOR2,
+                                markerfacecolor=self.COMPARING_MARKER2_COLOR, markeredgecolor=self.COMPARING_MARKER2_COLOR,
                                 label=self.COMPARING_LABEL2)
                     if abs(mean[0] - mean_comparing2[0]) > 1e6 and abs(mean[-1] - mean_comparing2[-1]) > 1e6:
                         ax.set_yscale("log")
@@ -259,6 +269,58 @@ class ExperimentRun:
                         file_obj.write(f"{mean_comparing2[index_x]:15.10f}")
                     file_obj.write("\n")
 
+            with open(f"{directory}{i}.tex", "w", encoding="utf-8") as tex:
+                tex.write("\\begin{frame}{" + title.replace("_", "\\_") + "}\n")
+                tex.write("  \\begin{columns}[T]\n")
+                tex.write("    \\begin{column}{0.75\\textwidth}\n")
+                tex.write("      \\begin{figure}\n")
+                tex.write("        \\centering\n")
+                tex.write("        \\includegraphics[width=\\textwidth, trim=0 0 0 38, clip]{" + i + ".png}\n")
+                tex.write("      \\end{figure}\n")
+                tex.write("    \\end{column}\n")
+                tex.write("    \\begin{column}{0.23\\textwidth}\n")
+                tex.write("      \\centering\n")
+                tex.write("      \\tiny\\renewcommand{\\arraystretch}{0.85}\\setlength{\\tabcolsep}{3pt}\n")
+                tex.write("      \\begin{tabular}{l")
+                if array_comparing and i in array_comparing:
+                    tex.write("r" * (2 + (1 if array_comparing2 and i in array_comparing2 else 0)))
+                else:
+                    tex.write("r")
+                tex.write("}\n")
+                tex.write("        \\toprule\n")
+
+                param_name = next(iter(self.parameters)) if isinstance(self.parameters, dict) else self.NAME_OF_X_SERIES
+                if not param_name:
+                    param_name = "$p$"
+                tex.write(f"        {param_name} & {i}")
+                if array_comparing and i in array_comparing:
+                    tex.write(f" & {self.COMPARING_LABEL}")
+                if array_comparing2 and i in array_comparing2:
+                    tex.write(f" & {self.COMPARING_LABEL2}")
+                tex.write(" \\\\\n")
+                tex.write("        \\midrule\n")
+
+                x_vals_numeric = []
+                for x in array_with_x_values:
+                    try:
+                        x_str = f"{float(x):.3f}"
+                    except ValueError:
+                        x_str = str(x)
+                    x_vals_numeric.append(x_str)
+
+                for index_x in range(len(array_with_x_values)):
+                    tex.write(f"        {x_vals_numeric[index_x]} & {mean[index_x]:.4f}")
+                    if array_comparing and i in array_comparing:
+                        tex.write(f" & {mean_comparing[index_x]:.4f}")
+                    if array_comparing2 and i in array_comparing2:
+                        tex.write(f" & {mean_comparing2[index_x]:.4f}")
+                    tex.write(" \\\\\n")
+                tex.write("        \\bottomrule\n")
+                tex.write("      \\end{tabular}\n")
+                tex.write("    \\end{column}\n")
+                tex.write("  \\end{columns}\n")
+                tex.write("\\end{frame}\n")
+
     def load(self, directory):
         if os.path.exists(f"{directory}results.csv"):
             dataframe = pd.read_csv(f"{directory}results.csv", header=1, delimiter=";")
@@ -275,7 +337,62 @@ class ExperimentRun:
             for j in dataframe[name_for_x_column]:
                 array_with_x_values.append(f"{name_for_x_column}={j}")
             return array_with_data, array_with_x_values
+        gdt_path = f"{directory}results.gdt"
+        if os.path.exists(gdt_path):
+            result, x_vals, _ = self._load_from_gdt(gdt_path)
+            return result, x_vals
         return {}, []
+
+    def _load_from_gdt(self, gdt_path):
+        dataframe, config_list = self.read_gdt(gdt_path)
+        if dataframe.empty:
+            return {}, [], {}
+        array_with_data = {}
+        array_with_x_values = []
+        columns = list(dataframe.columns)
+        name_for_x_column = columns[0]
+        for i in columns[1:]:
+            if not i.startswith("std_"):
+                array_with_data[i] = []
+        for i in list(array_with_data.keys()):
+            std_col = f"std_{i}"
+            if std_col in columns:
+                for j in range(len(dataframe[i])):
+                    array_with_data[i].append([dataframe[i][j], dataframe[std_col][j]])
+            if not array_with_data[i]:
+                del array_with_data[i]
+        try:
+            import ast
+            with gzip.open(gdt_path, "rb") as f:
+                tree = lxml.etree.parse(f)
+            root = tree.getroot()
+            children = root.getchildren()
+            if len(children) == 3:
+                first_var = children[1].getchildren()[0]
+                if len(first_var.values()) == 2:
+                    label_text = first_var.values()[1]
+                    parsed = ast.literal_eval(label_text)
+                    if isinstance(parsed, list) and len(parsed) == len(dataframe):
+                        array_with_x_values = parsed
+        except Exception:
+            pass
+        if not array_with_x_values:
+            for j in dataframe[name_for_x_column]:
+                array_with_x_values.append(f"{name_for_x_column}={j}")
+        metadata = {"name_of_x_series": name_for_x_column}
+        for item in config_list:
+            if "=" in item:
+                k, v = item.split("=", 1)
+                try:
+                    metadata[k.lower()] = int(v)
+                except ValueError:
+                    try:
+                        metadata[k.lower()] = float(v)
+                    except ValueError:
+                        metadata[k.lower()] = v
+            else:
+                metadata.setdefault("algorithm", item)
+        return array_with_data, array_with_x_values, metadata
 
     def _data_keys(self, array_with_data):
         return [k for k in array_with_data
@@ -316,7 +433,9 @@ class ExperimentRun:
         description2 = str(model.config) + str(self.config)
 
         variables_xml = variables(count=f"{2 * len(keys) + 1}")
-        variables_xml.append(variable(name=f"{array_with_x_values[0].split('=')[0]}", label=f"{description1}"))
+        x_var_name = (self.NAME_OF_X_SERIES if self.NAME_OF_X_SERIES
+                      else array_with_x_values[0].strip().split()[-1].split("=")[0])
+        variables_xml.append(variable(name=x_var_name, label=f"{description1}"))
         first = True
         for j in keys:
             name = "leverage_" if j == "leverage" else j
@@ -329,9 +448,7 @@ class ExperimentRun:
 
         observations_xml = observations(count=f"{len(array_with_x_values)}", labels="false")
         for i in range(len(array_with_x_values)):
-            value_for_line = f"{array_with_x_values[i].split('=')[1]}"
-            if " " in value_for_line:
-                value_for_line = value_for_line.split(" ")[0]
+            value_for_line = array_with_x_values[i].strip().split()[-1].split("=")[1]
             string_obs = f"{value_for_line}  "
             for j in keys:
                 string_obs += f"{array_with_data[j][i][0]}  {array_with_data[j][i][1]}  "
@@ -427,7 +544,7 @@ class ExperimentRun:
 
     def verify_directories(self):
         if not os.path.isdir(self.OUTPUT_DIRECTORY):
-            os.mkdir(self.OUTPUT_DIRECTORY)
+            os.makedirs(self.OUTPUT_DIRECTORY, exist_ok=True)
 
     def listnames(self):
         num = 0
@@ -836,10 +953,32 @@ class Runner:
                                  help="Plot also the errorbar (deviation error)")
         self.parser.add_argument("--reverse", default=False, action=argparse.BooleanOptionalAction,
                                  help="Execute the experiment in opposite order")
-        self.parser.add_argument("--stats_market", default=False, action=argparse.BooleanOptionalAction,
+        self.parser.add_argument("--statsb", default=False, action=argparse.BooleanOptionalAction,
                                  help="Generate also resultsb.txt|resultsb.gdt")
         self.parser.add_argument("--plot_removing_first", default=False, action=argparse.BooleanOptionalAction,
                                  help="Remove the first x-axis value from plots")
+        self.parser.add_argument("--plot", default=False, action=argparse.BooleanOptionalAction,
+                                 help="Load existing results.gdt and regenerate plots only")
+        self.parser.add_argument("--directory", type=str, default=None,
+                                 help="Override OUTPUT_DIRECTORY (path to results.gdt)")
+
+    def plot_only(self, experiment, directory):
+        directory = directory.rstrip("/\\") + "/"
+        results_to_plot, results_x_axis, metadata = experiment._load_from_gdt(f"{directory}results.gdt")
+        if not results_to_plot:
+            print("No results found. Run with --do first.")
+            return
+        print(f"Loaded data from {directory}")
+        experiment.MC = metadata.get("mc", experiment.MC)
+        experiment.NAME_OF_X_SERIES = metadata.get("name_of_x_series", experiment.NAME_OF_X_SERIES)
+        results_comparing, results_comparing2 = experiment.load_comparing(results_x_axis)
+        title_x = experiment.NAME_OF_X_SERIES if experiment.NAME_OF_X_SERIES else ""
+        experiment.plot(
+            results_to_plot, results_x_axis,
+            title_x,
+            f"{directory}/",
+            results_comparing, results_comparing2,
+        )
 
     def do(self):
         args = self.parser.parse_args()
@@ -848,14 +987,20 @@ class Runner:
             experiment.clear_results()
         experiment.error_bar = args.errorbar
         experiment.plot_removing_first = args.plot_removing_first
+        directory = args.directory if args.directory else experiment.OUTPUT_DIRECTORY
         if args.listnames:
             experiment.listnames()
+        elif args.plot:
+            self.plot_only(experiment, directory)
+            return experiment
         elif args.do:
+            experiment.OUTPUT_DIRECTORY = directory
+            experiment.clear_results()
             experiment.do(clear_previous_results=args.clear, reverse_execution=args.reverse)
-            if args.stats_market:
+            if args.statsb:
                 experiment.do_stats_market()
             return experiment
-        elif args.stats_market:
+        elif args.statsb:
             experiment.do_stats_market()
         else:
             self.parser.print_help()

@@ -1,0 +1,9 @@
+\babel@toc {english}{}\relax 
+\beamer@sectionintoc {1}{Abstract}{2}{0}{1}
+\beamer@sectionintoc {2}{Risk and Connectivity}{4}{0}{2}
+\beamer@sectionintoc {3}{Model Framework}{8}{0}{3}
+\beamer@sectionintoc {4}{Interest Rate and Market Power}{15}{0}{4}
+\beamer@sectionintoc {5}{Equity and Bankruptcy Dynamics}{19}{0}{5}
+\beamer@sectionintoc {6}{Phase Transition}{22}{0}{6}
+\beamer@sectionintoc {7}{Results}{26}{0}{7}
+\beamer@sectionintoc {8}{Conclusions}{32}{0}{8}
