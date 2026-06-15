@@ -252,6 +252,8 @@ class ExperimentRun:
                 ax.set_xticklabels(plot_x_values, rotation=270, fontsize=5)
             if array_comparing or max_line_key in array_with_data or min_line_key in array_with_data:
                 plt.legend(loc="best")
+            ax.set_xlabel(title_x, fontsize=6)
+            ax.set_ylabel(i, fontsize=6)
             plt.savefig(f"{directory}{i}.png", dpi=300)
             plt.close(fig)
             with open(f"{directory}{i}.txt", "w", encoding="utf-8") as file_obj:

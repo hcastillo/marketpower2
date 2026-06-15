@@ -19,11 +19,11 @@ from interbank_lenderchange import LenderChange
 class MinPRun(exp_runner.ExperimentRun):
     N = 50
     T = 1000
-    MC = 30
+    MC = 50
     
     ALGORITHM = LenderChange
-    #OUTPUT_DIRECTORY = "/experiments/1106/exp_min_p_0_01"
-    OUTPUT_DIRECTORY = "/experiments/0906/exp_min_p_0_01_capacity_haircut"
+    OUTPUT_DIRECTORY = "/experiments/1406/exp_min_p_0_01"
+    #OUTPUT_DIRECTORY = "/experiments/0906/exp_min_p_0_01_capacity_haircut"
 
     parameters = {
         "p":  np.linspace(0.001, 0.121, num=12), # [0.01, 0.05, 0.07, 0.0075, 0.08, 0.09, 0.35, 0.5, 0.9] # np.linspace(0.00001, 1, num=10), #
@@ -35,7 +35,7 @@ class MinPRun(exp_runner.ExperimentRun):
     LENGTH_FILENAME_PARAMETER = 5
     LENGTH_FILENAME_CONFIG = 0
 
-    SEED_FOR_EXECUTION = 2025
+    SEED_FOR_EXECUTION = 2000
     
     XTICKS_SCALED = True
     NAME_OF_X_SERIES = "p"
