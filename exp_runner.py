@@ -323,6 +323,78 @@ class ExperimentRun:
                 tex.write("  \\end{columns}\n")
                 tex.write("\\end{frame}\n")
 
+        if all(k in array_with_data for k in ("bankruptcies", "bankruptcy_rationed", "bankruptcy_contagion")):
+            x = array_with_x_values
+            rat = [array_with_data["bankruptcy_rationed"][j][0] for j in range(len(x))]
+            cont = [array_with_data["bankruptcy_contagion"][j][0] for j in range(len(x))]
+            total = [array_with_data["bankruptcies"][j][0] for j in range(len(x))]
+            repay_fail = [total[j] - rat[j] - cont[j] for j in range(len(x))]
+
+            plt.clf()
+            fig, ax = plt.subplots()
+            ax2 = ax.twinx()
+            ax.plot(x, rat, linestyle=self.STYLE, marker="s", color="black",
+                    markerfacecolor="red", markeredgecolor="red", label="Rationing")
+            ax2.plot(x, cont, linestyle=self.STYLE, marker="o", color="darkgray",
+                     markerfacecolor="red", markeredgecolor="red", label="Contagion")
+            ax.plot(x, repay_fail, linestyle=self.STYLE, marker="o", color="lightgray",
+                    markerfacecolor="white", markeredgecolor="red", label="Repayment fail.")
+            plt.title(f"Bankruptcies by channel vs {title_x} MC={self.MC}")
+            ax.set_xlabel(title_x, fontsize=6)
+            ax.set_ylabel("Rationing + Repayment fail.", fontsize=6)
+            ax2.set_ylabel("Contagion", fontsize=6)
+            if self.XTICKS_SCALED and self.NAME_OF_X_SERIES:
+                pass
+            else:
+                ax.set_xticks(x)
+                ax.set_xticklabels(plot_x_values, rotation=270, fontsize=5)
+            lines1, labels1 = ax.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            ax.legend(lines1 + lines2, labels1 + labels2, loc="best")
+            plt.savefig(f"{directory}bankruptcies_all.png", dpi=300)
+            plt.close(fig)
+
+            param_name = next(iter(self.parameters)) if isinstance(self.parameters, dict) and self.parameters else self.NAME_OF_X_SERIES
+            if not param_name:
+                param_name = "$p$"
+            param_name = str(param_name).replace("_", "\\_")
+
+            x_vals_numeric = []
+            for val in x:
+                try:
+                    x_vals_numeric.append(f"{float(val):.3f}")
+                except ValueError:
+                    x_vals_numeric.append(str(val))
+
+            with open(f"{directory}bankruptcies_all.tex", "w", encoding="utf-8") as tex:
+                tex.write("\\begin{frame}{Bankruptcies by channel}\n")
+                tex.write("  \\begin{columns}[T]\n")
+                tex.write("    \\begin{column}{0.75\\textwidth}\n")
+                tex.write("      \\begin{figure}\n")
+                tex.write("        \\centering\n")
+                tex.write("        \\includegraphics[width=\\textwidth, trim=0 0 0 38, clip]{bankruptcies_all.png}\n")
+                tex.write("      \\end{figure}\n")
+                tex.write("    \\end{column}\n")
+                tex.write("    \\begin{column}{0.23\\textwidth}\n")
+                tex.write("      \\centering\n")
+                tex.write("      \\tiny\n")
+                tex.write("      \\renewcommand{\\arraystretch}{0.85}\\setlength{\\tabcolsep}{3pt}\n")
+                tex.write("      \\textcolor{red}{$\\blacksquare$} Rationing (left)\n")
+                tex.write("      \\textcolor{red}{$\\bullet$} Contagion (right)\\par\n")
+                tex.write("      \\textcolor{red}{$\\circ$} Repayment fail. (left)\\par\n")
+                tex.write("      \\vspace{0.15cm}\n")
+                tex.write("      \\begin{tabular}{lrrr}\n")
+                tex.write("        \\toprule\n")
+                tex.write(f"        {param_name} & Rat. & Cont. & Fail. \\\\\n")
+                tex.write("        \\midrule\n")
+                for j in range(len(x)):
+                    tex.write(f"        {x_vals_numeric[j]} & {rat[j]:.2f} & {cont[j]:.2f} & {repay_fail[j]:.2f} \\\\\n")
+                tex.write("        \\bottomrule\n")
+                tex.write("      \\end{tabular}\n")
+                tex.write("    \\end{column}\n")
+                tex.write("  \\end{columns}\n")
+                tex.write("\\end{frame}\n")
+
     def load(self, directory):
         if os.path.exists(f"{directory}results.csv"):
             dataframe = pd.read_csv(f"{directory}results.csv", header=1, delimiter=";")

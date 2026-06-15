@@ -22,7 +22,7 @@ class MinPRun(exp_runner.ExperimentRun):
     MC = 50
     
     ALGORITHM = LenderChange
-    OUTPUT_DIRECTORY = "/experiments/1406/exp_min_p_0_01"
+    OUTPUT_DIRECTORY = "/experiments/1106/exp_min_p_0_01"
     #OUTPUT_DIRECTORY = "/experiments/0906/exp_min_p_0_01_capacity_haircut"
 
     parameters = {
