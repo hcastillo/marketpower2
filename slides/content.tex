@@ -67,7 +67,7 @@
 \begin{frame}{Abstract: ABM, Interbank Market, and Contagion}
   \begin{itemize}
     \item We use \textbf{Agent-Based Models} to study systemic risk in interbank credit networks.
-    \item The dynamics are driven by two key parameters: the \textbf{probability of attachment} $p$ of Erdős–Rényi graphs as interbank connections generator (exogenous) and the \textbf{interest rate} $r$ (endogenous).
+    \item The dynamics are driven by two key parameters: the \textbf{probability of attachment} $p$ Erd\H{o}s--R\'enyi graphs as interbank connections generator (exogenous) and the \textbf{interest rate} $r$ (endogenous).
     \item As $p$ increases, the network becomes more connected, forming a giant component. Interest rates decline due to greater competition and reduced market power.
     \item However, higher connectivity also raises the probability of borrower bankruptcy. Excessively low interest rates, maintained for too long, can be \textbf{detrimental to the stability of the system}.
   \end{itemize}
@@ -133,6 +133,7 @@
 
 \begin{frame}{Balance Sheet}
   \begin{block}{Accounting Identity}
+    \centering
     $L^t_i + C^t_i + R^t_i = D^t_i + E^t_i$
   \end{block}
   \begin{itemize}
@@ -144,9 +145,10 @@
 
 \begin{frame}{Liquidity Shocks}
   Deposits are exogenously shocked each period:
-  \[
-    D^t_i = D^{t-1}_i [\mu + \omega \cdot U(0,1)]
-  \]
+  \begin{block}{}
+    \centering
+    $ D^t_i = D^{t-1}_i [\mu + \omega \cdot U(0,1)]$
+  \end{block}
   \begin{itemize}
     \item $\mu$: expected growth rate (0.7).
     \item $\omega$: shock magnitude (0.35).
@@ -173,14 +175,12 @@
   \vspace{0.5cm}
   \begin{minipage}{0.85\textwidth}
     \vspace{3.5cm}
-
-    \centering
     \footnotesize
-    Each of the $\binom{N}{2}$ possible edges is included independently with probability $p$. For $N=50$ banks:
+    Each of the $\binom{N}{2}$ edges is included independently with prob. $p$. For $N=50$ banks:
     \begin{itemize}
       \item $p = 0$: isolated banks, no interbank market.
-      \item $p = 1/N = 0.02$: \textbf{percolation threshold}---giant component emerges.
-      \item $p > 0.05$: network is saturated ($>92\%$ of banks connected).
+      \item $p = 1/N = 0.02$: \textbf{phase transition}---giant component emerges.
+      \item $p > 0.05$: network is saturated ($>92\%$ of banks connected): \textbf{supercritical regime}.
     \end{itemize}
   \end{minipage}
 \end{frame}
@@ -201,6 +201,7 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 \begin{frame}{Expected Profit}
   Banks are risk-neutral in perfect competition. Expected profit from lending to borrower $j$:
   \begin{block}{}
+    \centering
     $E[\Pi_{i,j}^t] = p_j^t (r_{i,j}^t - m) c_{i,j}^t - (1 - p_j^t) m \cdot c_{i,j}^t$
   \end{block}
   \begin{itemize}
@@ -212,26 +213,25 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 \end{frame}
 
 \begin{frame}{Interest Rate Derivation}
-  Setting $E[\Pi] = 0$ (zero-profit condition):
-  \[
-    r_{i,j}^t = \frac{m}{p_j^t}
-  \]
-  Introducing \textbf{market power} $\psi \in [0,1)$:
-  \[
-    \boxed{r_{i,j}^t = \frac{m}{p_j^t (1 - \psi)}}
-  \]
+  Setting $E[\Pi] = 0$ (zero-profit condition): $r_{i,j}^t = \frac{m}{p_j^t}$. \\
+  Introducing \textbf{market power} $\psi \in [0,1]$:
+  \begin{block}{}
+    \centering
+    $ r_{i,j}^t = \frac{m}{p_j^t (1 - \psi)} $
+  \end{block}
   \begin{itemize}
-    \item $\psi = 0$: competitive (actuarially fair) rate.
+    \item $\psi = 0$: competitive rate.
     \item $\psi > 0$: monopolistic markup from information asymmetry.
-    \item As connectivity $p$ increases, competition intensifies, market power $\psi$ declines, and the equilibrium interest rate falls.
+    \item As connectivity $p$ increases, competition intensifies, market power $\psi$ declines, and the interest rate falls.
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Endogenous Market Power}
   Market power evolves endogenously with bank size:
-  \[
-    \psi_i^t = \frac{E_i^t}{E_i^{t,\max}}
-  \]
+  \begin{block}{}
+    \centering
+    $ \psi_i^t = \frac{E_i^t}{E_i^{t,\max}} $
+  \end{block}
   \begin{itemize}
     \item Larger banks (higher equity) exercise more market power.
     \item Borrower default probability:
@@ -248,9 +248,10 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 %======================================================================
 
 \begin{frame}{Equity Evolution}
-  \[
-    E^t_i = E^{t-1}_i + \sum_{j} l^{t}_{i,j} r^{t}_{i,j} - \sum_{j \subseteq \theta^t_i} \left[ B^{t}_{i,j} - \tilde{L}^t_j \right]
-  \]
+   \begin{block}{}
+    \centering
+    $ E^t_i = E^{t-1}_i + \sum_{j} l^{t}_{i,j} r^{t}_{i,j} - \sum_{j \subseteq \theta^t_i} \left[ B^{t}_{i,j} - \tilde{L}^t_j \right] $
+  \end{block} 
   \begin{itemize}
     \item \textbf{Bankruptcy:} bank exits if $E_i^t < 0$.
     \item \textbf{Fire sales:} last-resort option (blocked in this model to amplify contagion effects).
@@ -279,8 +280,8 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 
 \begin{frame}[shrink=0.1]{Phase Transition}
   \begin{itemize}
-    \item \textbf{Percolation threshold:} GCS jumps from $\sim 1$ to $\sim 46$ banks ($92\%$) as $p$ crosses the critical value $1/N$.
-    \item \textbf{Low $p$:} rationing-dominated, high interest rates ($r \approx 30$), few loans granted.
+    \item \textbf{Phase transition:} GCS jumps from $\sim 1$ to $\sim 46$ banks ($92\%$) as $p$ crosses the phase transition (really above $p_c=1/N$).
+    \item \textbf{Low $p$:} rationing-dominated, high interest rates ($r \approx 3.0$), few loans granted.
     \item \textbf{High $p$:} repayment-failure-dominated, low interest rates ($r \approx 1.8$), saturated network.
     \item As the market becomes more competitive, lenders serve more clients, the probability of bankruptcy rises, and bad debt accumulates.
   \end{itemize}
@@ -330,15 +331,22 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
           (0.12000, 49.90)
         };
         \draw[red, dashed, thick] (axis cs:0.02,0) -- (axis cs:0.02,55)
-          node[pos=0.5, right, font=\tiny]{$p_c = 1/N$};
+          node[pos=0.5, right, font=\tiny]{$p_c$};
+        \draw[red, dotted, thick] (axis cs:0.055,0) -- (axis cs:0.055,55)
+          node[pos=0.5, right, font=\tiny]{$p_s$};
         \end{axis}
       \end{tikzpicture}
-      \vspace{0.1cm}
-      \centering
-      \textbf{Percolation threshold} for Erd\H{o}s--R\'enyi graph:
-      \[
+      \vspace{0.1cm}      
+      \tiny{        
+        $\langle k \rangle = p(N-1)$
+        }
+      \vspace{0.2cm} \\
+      \footnotesize          
+      \textbf{Percolation threshold} $\langle k \rangle \approx 1$ (phase transition) for Erd\H{o}s--R\'enyi graph: \[
         p_c = \frac{1}{N} = \frac{1}{50} = 0.02
-      \]
+        \] \\
+      \textbf{Supercritical region} $\langle k \rangle = 2.14$, observed at $p_s = 0.0436$. \\
+        
     \end{column}
     \begin{column}{0.42\textwidth}
       \footnotesize
@@ -363,15 +371,15 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 \end{frame}
 
 
-\begin{frame}{Connectivity and Systemic Risk}
-  \begin{itemize}
-    \item As $p$ increases, the interest rate drops from $30$ (upper bound) to $\sim 1.65$, reflecting reduced market power.
-    \item Bankruptcies remain stable at $\sim 7$--$7.5$, with the composition shifting from rationing to repayment failure.
-    \item Active loans saturate at $\sim 13$ ($26\%$ of banks), indicating that lenders can serve more clients.
-    \item Bad debt grows rapidly with connectivity (from $0$ to $\sim 1.3$), as more loans translate into higher default exposure.
-    \item Taken together, these results show that an interest rate that remains too low for too long can be \textbf{detrimental to the stability of the system}.
-  \end{itemize}
-\end{frame}
+% \begin{frame}{Connectivity and Systemic Risk}
+%   \begin{itemize}
+%     \item As $p$ increases, the interest rate drops from $30$ (upper bound) to $\sim 1.65$, reflecting reduced market power.
+%     \item Bankruptcies remain stable at $\sim 7$--$7.5$, with the composition shifting from rationing to repayment failure.
+%     \item Active loans saturate at $\sim 13$ ($26\%$ of banks), indicating that lenders can serve more clients.
+%     \item Bad debt grows rapidly with connectivity (from $0$ to $\sim 1.3$), as more loans translate into higher default exposure.
+%     \item Taken together, these results show that an interest rate that remains too low for too long can be \textbf{detrimental to the stability of the system}.
+%   \end{itemize}
+% \end{frame}
 
 %======================================================================
 \section{Results}\label{sec:7}
@@ -710,7 +718,7 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
 \begin{frame}{Key Findings}
   As connectivity $p$ increases:
   \begin{enumerate}
-    \item The Giant Component Size increases sharply above the percolation threshold.
+    \item The Giant Component Size increases sharply above the phase transition.
     \item Market power decreases, and the equilibrium interest rate falls.
     \item The probability of borrower bankruptcy rises, as lenders serve a larger number of clients.
     \item Bad debt accumulates, reflecting greater systemic exposure to default.
