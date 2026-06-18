@@ -104,15 +104,23 @@
 %   \end{itemize}
 % \end{frame}
 
-\begin{frame}{Channels of Contagion in Financial Crises}
-  Three primary propagation mechanisms of systemic failure:
+\begin{frame}{Failure Channels in Financial Crises}
+  In literature, three primary propagation mechanisms of systemic failure are identified:
   \begin{enumerate}
     \item \textbf{Bank runs:} self-fulfilling panics where depositors withdraw mass funds simultaneously.
     \item \textbf{Asset price contagion:} fire-sale spirals that depreciate assets across the system.
     \item \textbf{Interlocking exposures:} direct linkages through the interbank market---default of one bank triggers defaults in connected banks.
   \end{enumerate}
-  \vspace{0.3cm}
-  The model distinguishes three failure channels: \textbf{rationing} (borrower cannot secure sufficient funding), \textbf{contagion} (lender suffers losses from borrower default), and \textbf{repayment failure}. At low connectivity, rationing dominates; at high connectivity, repayment failure becomes the primary risk.
+\end{frame}
+
+\begin{frame}{Failure Channels in the Model}
+  In this model, we consider the three failure channels:
+  \begin{itemize}
+    \item \textbf{Rationing} (insufficient funding of borrower),
+    \item \textbf{Contagion} (lender suffers losses from borrower default),
+    \item \textbf{Repayment failure} (borrower cannot repay loan).
+  \end{itemize}
+  At low connectivity: rationing dominates; at high connectivity, repayment failure becomes the primary risk.
 \end{frame}
 
 
@@ -125,9 +133,8 @@
   \begin{itemize}
     \item ABM with $N$ banks in a sequential economy $t = \{0, 1, \dots, T\}$.
     \item Banks connected through an \textbf{Erd\H{o}s--R\'enyi} random graph $G(N, p)$: each edge exists with exogenous probability $p$ (probability of attachment).
-    \item Three interacting sectors: goods market, credit market, interbank market.
     \item The \textbf{interest rate} $r$ is the key endogenous variable determining loan relationships between borrowers and lenders.
-    \item Goal: analyze how \textbf{connectivity} ($p$) and \textbf{market power} affect system stability through the endogenous adjustment of $r$.
+    \item Goal: analyze how \textbf{connectivity} ($p$) and \textbf{market power} ($\psi$) affect system stability through the endogenous adjustment of $r$.
   \end{itemize}
 \end{frame}
 
@@ -137,9 +144,9 @@
     $L^t_i + C^t_i + R^t_i = D^t_i + E^t_i$
   \end{block}
   \begin{itemize}
-    \item \textbf{Assets:} Long-term loans ($L$), liquidity ($C$), reserves ($R$).
+    \item \textbf{Assets:} Long-term assets ($L$), liquidity ($C$), reserves ($R$).
     \item \textbf{Liabilities:} Deposits ($D$), equity ($E$).
-    \item Reserves set by regulation: $R_i^t = \hat{r} D_i^t$ with $\hat{r} = 0.02$.
+    \item Reserves set by regulation: $R = \hat{r} D$ with $\hat{r} = 0.02$.
   \end{itemize}
 \end{frame}
 
@@ -150,10 +157,10 @@
     $ D^t_i = D^{t-1}_i [\mu + \omega \cdot U(0,1)]$
   \end{block}
   \begin{itemize}
-    \item $\mu$: expected growth rate (0.7).
-    \item $\omega$: shock magnitude (0.35).
-    \item \textbf{Potential lenders:} banks with positive net deposits (after reserves).
-    \item \textbf{Potential borrowers:} banks with negative net deposits exceeding liquidity.
+    \item $\mu=0.7$: expected growth rate.
+    \item $\omega=0.35  $: shock magnitude.
+    \item \textbf{Potential lenders:} banks with supply of $C$ (after rebalance).
+    \item \textbf{Potential borrowers:} banks with demand of loan ($C < 0$).
   \end{itemize}
 \end{frame}
 
@@ -176,11 +183,11 @@
   \begin{minipage}{0.85\textwidth}
     \vspace{3.5cm}
     \footnotesize
-    Each of the $\binom{N}{2}$ edges is included independently with prob. $p$. For $N=50$ banks:
+    Each of the $\binom{N}{2}$ edges is included independently with prob. $p$. For $N=20$ banks:
     \begin{itemize}
       \item $p = 0$: isolated banks, no interbank market.
-      \item $p = 1/N = 0.02$: \textbf{phase transition}---giant component emerges.
-      \item $p > 0.05$: network is saturated ($>92\%$ of banks connected): \textbf{supercritical regime}.
+      \item $p = 1/N = 0.05$: \textbf{phase transition}: giant component begins to emerge.
+      \item $p > 0.105$: network is saturated ($>92\%$ of banks connected): \textbf{supercritical regime}.
     \end{itemize}
   \end{minipage}
 \end{frame}
@@ -199,16 +206,18 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 
 
 \begin{frame}{Expected Profit}
-  Banks are risk-neutral in perfect competition. Expected profit from lending to borrower $j$:
+  Banks are risk-neutral in perfect competition. Expected profit for lender $i$ from lending to borrower $j$:
   \begin{block}{}
     \centering
-    $E[\Pi_{i,j}^t] = p_j^t (r_{i,j}^t - m) c_{i,j}^t - (1 - p_j^t) m \cdot c_{i,j}^t$
+    $\mathbb{E}[\Pi_t^{i,j}] = \underbrace { p_t^j (r_t^{i,j} c_t^{i,j} - \overbrace {m \, c^{i,j}_t}^{\text{cost of loan}}) }_{\text{normally pays}}- \underbrace {(1 - p_t^j)(m \, c_t^{i,j})}_{\text{when fails}} $
+
+    % $E[\Pi_{i,j}^t] = p_j^t (r_{i,j}^t - m) c_{i,j}^t - (1 - p_j^t) m \cdot c_{i,j}^t$
   \end{block}
   \begin{itemize}
     \item $m$: screening cost ($0.015$).
     \item $p_j^t$: probability of borrower survival.
     \item $r_{i,j}^t$: interest rate; $c_{i,j}^t$: lending capacity.
-    \item The interest rate is the key variable determining the profitability and risk of each loan relationship.
+%    \item The interest rate is the key variable determining the profitability and risk of each loan relationship.
   \end{itemize}
 \end{frame}
 

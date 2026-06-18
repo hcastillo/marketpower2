@@ -37,11 +37,11 @@ class Config:
     # seed applied for random values (set during initialize)
     seed: int = 5
 
-    # shocks parameters: mi=0.7 omega=0.6 for perfect balance
-    # less omega, more negative is the shock
+    # shocks parameters (mi=0.7 omega=0.6 for perfect balance). less omega, more negative is the shock. 0.35 was the original value for omega
+    # Since U(0,1) has an average value of 0.5, the average shock multiplier is:
+    # μ+ω⋅0.5=0.7+(0.35⋅0.5)=0.875
+    # Economic Meaning: An expected value of 0.875 implies that, on average, each bank experiences a loss of 12.5% of its deposits in each period.
     mu: float = 0.7  # mi µ
-    # 0.6 perfect symmetrical shock, 0.5 es eagerly negative shock  
-    # 0.35 was the original value for omega  
     omega: float = 0.35 # omega ω   
 
     # banks initial parameters
