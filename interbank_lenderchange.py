@@ -92,6 +92,8 @@ class GraphStatistics:
 class LenderChange:
     SAVE_THE_DIFFERENT_GRAPH_OF_EACH_STEP = True
     GRAPH_NAME = "erdos_renyi"
+    draw_guru = False
+    draw_in_circle = True
     
     def __init__(self, model):
         self.p = model.config.p
@@ -134,7 +136,38 @@ class LenderChange:
         self.__get_graph_from_guru(input_graph, output_graph, guru, None)
         return output_graph, guru
     
-    def draw(self, original_graph, new_guru_look_for=False, title=None, show=False):
+    @staticmethod
+    def _compute_dashed_edges(graph):
+        edges = list(graph.edges())
+        random.shuffle(edges)
+        dashed = set()
+        covered = set()
+        target = len(graph.nodes()) // 2
+        for u, v in edges:
+            if u not in covered and v not in covered:
+                dashed.add((u, v))
+                covered.add(u)
+                covered.add(v)
+                if len(covered) >= target:
+                    break
+        return dashed
+
+    @staticmethod
+    def plot_saved_graph(json_filename):
+        graph = GraphStatistics.load_graph_json(json_filename)
+        output = json_filename.rsplit('.json', 1)[0] + 'b.png'
+        lc = object.__new__(LenderChange)
+        lc.node_positions = None
+        lc.node_colors = None
+        lc.model = None
+        lc.draw(graph, new_guru_look_for=True, title=None, show=False, all_gray=True)
+        plt.rcParams.update({'font.size': 6})
+        plt.rcParams.update(plt.rcParamsDefault)
+        warnings.filterwarnings("ignore", category=UserWarning)
+        plt.savefig(output)
+        plt.close('all')
+
+    def draw(self, original_graph, new_guru_look_for=False, title=None, show=False, all_gray=False):
         """ Draws the graph using a spring layout that reuses the previous one layout, to show similar position for
             the same ids of nodes along time. If the graph is undirected (Barabasi) then no """
         graph_to_draw = original_graph.copy()
@@ -143,7 +176,9 @@ class LenderChange:
             plt.title(title)
         # if not self.node_positions:
         guru = None
-        if self.node_positions is None:
+        if self.draw_in_circle:
+            self.node_positions = nx.circular_layout(graph_to_draw)
+        elif self.node_positions is None:
             self.node_positions = nx.spring_layout(graph_to_draw, pos=self.node_positions)
         if not hasattr(original_graph, "type") and original_graph.is_directed():
             # guru should not have out edges, and surely by random graphs it has:
@@ -161,7 +196,7 @@ class LenderChange:
             self.node_colors = []
             guru, guru_node_edges = self.find_guru(graph_to_draw)
             for node in graph_to_draw.nodes():
-                if node == guru:
+                if self.draw_guru and node == guru:
                     self.node_colors.append('darkorange')
                 elif self.__len_edges(graph_to_draw, node) == 0:
                     self.node_colors.append('lightblue')
@@ -169,11 +204,16 @@ class LenderChange:
                     self.node_colors.append('steelblue')
                 else:
                     self.node_colors.append('royalblue')
-        if hasattr(original_graph, "type") and original_graph.type == "barabasi_pref":
-            nx.draw(graph_to_draw, pos=self.node_positions, node_color=self.node_colors, with_labels=True)
-        else:
-            nx.draw(graph_to_draw, pos=self.node_positions, node_color=self.node_colors, arrowstyle='->',
-                    arrows=True, with_labels=True)
+        dashed_edges = self._compute_dashed_edges(graph_to_draw) if not all_gray else set()
+        nx.draw(graph_to_draw, pos=self.node_positions, node_color=self.node_colors,
+                edge_color='lightgray', style='solid', arrows=False, with_labels=True)
+        if dashed_edges:
+            di_graph = nx.DiGraph()
+            di_graph.add_nodes_from(graph_to_draw.nodes())
+            di_graph.add_edges_from(dashed_edges)
+            nx.draw_networkx_edges(di_graph, pos=self.node_positions,
+                                  edgelist=list(dashed_edges), style='dashed',
+                                  edge_color='black', arrows=True, arrowstyle='->')
         if show:
             plt.show()
         return guru
@@ -209,11 +249,14 @@ class LenderChange:
         self.banks_graph, description = self.generate_banks_graph()
         self.banks_graph.type = self.GRAPH_NAME
 
-        if self.model.export_datafile and save_graph:
+        if save_graph and (save_graph == 'all' or self.model.t in save_graph):
              filename_for_file = f"_{self.GRAPH_NAME}"
              if self.SAVE_THE_DIFFERENT_GRAPH_OF_EACH_STEP:
                  filename_for_file += f"_{self.model.t}"
-             destination_file_json = self.model.statistics.get_export_path(self.model.export_datafile,
+             export_datafile = self.model.stats.export_datafile
+             if not export_datafile:
+                 export_datafile = "results"
+             destination_file_json = self.model.stats.get_export_path(export_datafile,
                                                                            f"{filename_for_file}.json")
              if not os.path.isfile(destination_file_json):
                  self.save_graph_json(self.banks_graph, destination_file_json)

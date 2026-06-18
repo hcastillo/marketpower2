@@ -7,6 +7,7 @@
   \setbeamercolor{structure}{fg=pantone2955}
 
   \setbeamertemplate{headline}{%
+    \ifnum\insertframenumber=1\else%
     \leavevmode%
     \hbox{%
       \begin{beamercolorbox}[wd=.65\paperwidth,ht=2.5ex,dp=1.5ex,left]{section in head/foot}%
@@ -14,7 +15,7 @@
       \end{beamercolorbox}%
       \begin{beamercolorbox}[wd=.35\paperwidth,ht=2.5ex,dp=1.5ex,right]{section in head/foot}%
         \usebeamerfont{section in head/foot}%
-        \foreach \i in {1,...,7}{%
+        \foreach \i in {1,...,8}{%
           \ifnum\i=\insertsectionnumber%
             \hyperlink{sec:\i}{\color{yellow}\bfseries\i\ }%
           \else%
@@ -24,6 +25,7 @@
       \end{beamercolorbox}%
     }%
     \vskip0pt%
+    \fi%
   }
 }
 

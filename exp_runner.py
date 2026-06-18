@@ -569,6 +569,7 @@ class ExperimentRun:
             }
         )
         model.configure(**config_values)
+        model.save_graph = getattr(self, 'save_graph', False)
 
         model.lenderchange = self.ALGORITHM(model)
         model.stats.define_output_format(self.OUTPUT_FORMAT)
@@ -1035,6 +1036,8 @@ class Runner:
                                  help="Load existing results.gdt and regenerate plots only")
         self.parser.add_argument("--directory", type=str, default=None,
                                  help="Override OUTPUT_DIRECTORY (path to results.gdt)")
+        self.parser.add_argument("--graph", type=str, default='',
+                                 help="Save Erdos-Renyi graphs as PNG and JSON. Comma-separated time steps (e.g. 5,10,15) or 'all' for every step")
 
     def plot_only(self, experiment, directory):
         directory = directory.rstrip("/\\") + "/"
@@ -1061,6 +1064,12 @@ class Runner:
             experiment.clear_results()
         experiment.error_bar = args.errorbar
         experiment.plot_removing_first = args.plot_removing_first
+        if args.graph.lower() == 'all':
+            experiment.save_graph = 'all'
+        elif args.graph:
+            experiment.save_graph = set(int(x) for x in args.graph.split(','))
+        else:
+            experiment.save_graph = set()
         directory = args.directory if args.directory else experiment.OUTPUT_DIRECTORY
         if args.listnames:
             experiment.listnames()

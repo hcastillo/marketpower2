@@ -10,6 +10,7 @@
 import argparse
 import json
 import logging
+import os
 import random
 import re
 import sys
@@ -170,6 +171,7 @@ class Model:
         self.stats = Stats(self)
         self.log = Log(self)
         self.lenderchange = lc.LenderChange(self)
+        self.save_graph = False
         self.init()
 
     def configure_json(self, json_string: str):
@@ -283,7 +285,7 @@ class Model:
         return self.stats.finish()
 
     def setup_links(self):
-        self.lenderchange.setup_links(save_graph=False)
+        self.lenderchange.setup_links(save_graph=self.save_graph)
 
     def do_shock2(self, shock_values=None):
         # only when d>0 we will obtain a second shock:
@@ -858,7 +860,16 @@ class Model:
         ir_group.add_argument('--robust2_ir', action='store_true',
                               default=self.config.robust2_ir,
                               help='Winsorize interest rates at quantile bounds in each step')
+        parser.add_argument('--graph', type=str, default='',
+                            help='Save Erdos-Renyi graphs as PNG and JSON. Comma-separated time steps (e.g. 5,10,15) or "all" for every step')
+        parser.add_argument('--plot_graph', type=str, default=None,
+                            help='Load a saved graph JSON file, plot it (gray edges, no arrows) and save as PNG (inputb.png)')
         args, other_possible_config_args = parser.parse_known_args()
+        if args.plot_graph:
+            if not os.path.isfile(args.plot_graph):
+                parser.error(f"File not found: {args.plot_graph}")
+            lc.LenderChange.plot_saved_graph(args.plot_graph)
+            return
         if args.web:
             from interbank_web import create_app
 
@@ -882,6 +893,12 @@ class Model:
         self.stats.define_output_file(args.save)
         self.stats.define_plot_format(args.plot_format)
         self.log.interactive = args.log.upper() != 'DEBUG'
+        if args.graph.lower() == 'all':
+            self.save_graph = 'all'
+        elif args.graph:
+            self.save_graph = set(int(x) for x in args.graph.split(','))
+        else:
+            self.save_graph = set()
         self.run()
 
     @staticmethod

@@ -120,7 +120,7 @@
     \item \textbf{Contagion} (lender suffers losses from borrower default),
     \item \textbf{Repayment failure} (borrower cannot repay loan).
   \end{itemize}
-  At low connectivity: rationing dominates; at high connectivity, repayment failure becomes the primary risk.
+  At low connectivity: rationing dominates; at high connectivity, repayment failure becomes the most relevant.
 \end{frame}
 
 
@@ -133,7 +133,7 @@
   \begin{itemize}
     \item ABM with $N$ banks in a sequential economy $t = \{0, 1, \dots, T\}$.
     \item Banks connected through an \textbf{Erd\H{o}s--R\'enyi} random graph $G(N, p)$: each edge exists with exogenous probability $p$ (probability of attachment).
-    \item The \textbf{interest rate} $r$ is the key endogenous variable determining loan relationships between borrowers and lenders.
+    % \item The \textbf{interest rate} $r$ is the key endogenous variable determining loan relationships between borrowers and lenders.
     \item Goal: analyze how \textbf{connectivity} ($p$) and \textbf{market power} ($\psi$) affect system stability through the endogenous adjustment of $r$.
   \end{itemize}
 \end{frame}
@@ -193,6 +193,21 @@
 \end{frame}
 }
 
+\begin{frame}{Why supercritical is relevant in this model}
+  \begin{columns}[T]
+    \begin{column}{0.40\textwidth}
+      \centering
+      Erd\H{o}s--R\'enyi generated for $N=20$ \\
+      \includegraphics[width=\textwidth]{s01_erdos_renyi_10b.png}
+    \end{column}
+    \begin{column}{0.53\textwidth}
+      \centering
+      Considered links after applying restrictions\\
+      \includegraphics[width=\textwidth, trim=0 0 0 40, clip]{s01_erdos_renyi_10.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
 
 
 \begin{frame}{Network Structure}
@@ -222,7 +237,12 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 \end{frame}
 
 \begin{frame}{Interest Rate Derivation}
-  Setting $E[\Pi] = 0$ (zero-profit condition): $r_{i,j}^t = \frac{m}{p_j^t}$. \\
+  Setting $\mathbb{E}[\Pi] = 0$ (zero-profit condition):
+  \begin{block}{}
+    \centering
+     $r_{i,j}^t = \frac{m}{p_j^t}$
+  \end{block}
+  
   Introducing \textbf{market power} $\psi \in [0,1]$:
   \begin{block}{}
     \centering
@@ -230,10 +250,11 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
   \end{block}
   \begin{itemize}
     \item $\psi = 0$: competitive rate.
-    \item $\psi > 0$: monopolistic markup from information asymmetry.
+   % \item $\psi > 0$: monopolistic markup from information asymmetry.
     \item As connectivity $p$ increases, competition intensifies, market power $\psi$ declines, and the interest rate falls.
   \end{itemize}
 \end{frame}
+
 
 \begin{frame}{Endogenous Market Power}
   Market power evolves endogenously with bank size:
@@ -245,7 +266,7 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
     \item Larger banks (higher equity) exercise more market power.
     \item Borrower default probability:
     $p_{b,j}^t = E_j^t / E_j^{t,\max}$.
-    \item Leverage: $\lambda_j^t = d_j^t / E_j^t$.
+    %\item Leverage: $\lambda_j^t = d_j^t / E_j^t$.
     \item As $p$ increases, the market becomes more competitive\ --- borrowers can choose among more lenders, reducing lenders' market power. However, this also allows lenders to serve more clients, increasing their exposure to borrower default.
   \end{itemize}
 \end{frame}
@@ -289,7 +310,7 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 
 \begin{frame}[shrink=0.1]{Phase Transition}
   \begin{itemize}
-    \item \textbf{Phase transition:} GCS jumps from $\sim 1$ to $\sim 46$ banks ($92\%$) as $p$ crosses the phase transition (really above $p_c=1/N$).
+    \item \textbf{Phase transition:} GCS jumps from $\sim 1$ to $\sim 46$ banks ($92\%$) as $p$ crosses the supercritical region (above $p_c=1/N$).
     \item \textbf{Low $p$:} rationing-dominated, high interest rates ($r \approx 3.0$), few loans granted.
     \item \textbf{High $p$:} repayment-failure-dominated, low interest rates ($r \approx 1.8$), saturated network.
     \item As the market becomes more competitive, lenders serve more clients, the probability of bankruptcy rises, and bad debt accumulates.
@@ -346,7 +367,7 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
         \end{axis}
       \end{tikzpicture}
       \vspace{0.1cm}      
-      \tiny{        
+      $N=50$ banks, {        
         $\langle k \rangle = p(N-1)$
         }
       \vspace{0.2cm} \\
@@ -354,7 +375,7 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
       \textbf{Percolation threshold} $\langle k \rangle \approx 1$ (phase transition) for Erd\H{o}s--R\'enyi graph: \[
         p_c = \frac{1}{N} = \frac{1}{50} = 0.02
         \] \\
-      \textbf{Supercritical region} $\langle k \rangle = 2.14$, observed at $p_s = 0.0436$. \\
+      \textbf{Supercritical region} $\langle k \rangle = 2.14$, observed at $p_s = 0.055$. \\
         
     \end{column}
     \begin{column}{0.42\textwidth}
@@ -541,7 +562,7 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
   \end{columns}
   \tiny \setlength{\tabcolsep}{3pt}
   \renewcommand{\arraystretch}{0.85}
-  Initial conditions for each bank:
+  Average number of failures during simulations. \\ Initial conditions for each bank:
   \begin{tabular}{l|l}
     \multicolumn{1}{c|}{\textbf{Assets}} & \multicolumn{1}{c}{\textbf{Liabilities}} \\ \midrule
     $C^i_0= 5-0.18 = 4.82$ & $D^i_0= 9$\\
@@ -555,7 +576,7 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 
 \begin{frame}{Bankruptcies decomposition }
   \tiny As $p$ increases, the channel of failure shifts from rationing (few lenders available) to repayment failure (low rates, more clients served). % This compositional change illustrates how excessive connectivity and low interest rates jointly increase systemic fragility.\\[-0.4em]
-Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ periods, and $p$ varying from 0 to 0.12 in increments of 0.01.
+%Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ periods, and $p$ varying from 0 to 0.12 in increments of 0.01.
   \begin{columns}[T]
     \begin{column}{0.75\textwidth}
       \begin{figure}
@@ -582,6 +603,7 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
         0.121 & 1.51 & 0.30 & 5.71 \\
         \bottomrule
       \end{tabular}
+      Average number of failures during simulations. 
     \end{column}
   \end{columns}
 \end{frame}
@@ -597,7 +619,7 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
       \end{figure}
     \end{column}
     \begin{column}{0.23\textwidth}
-      \centering
+      %\centering
       \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{3pt}
       \begin{tabular}{lr}
         \toprule
@@ -616,12 +638,16 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
         0.121 & 1.7982 \\
         \bottomrule
       \end{tabular}
+            \\ 
+            Average value for the interest rate of loans in the simulations. 
+
     \end{column}
   \end{columns}
 \end{frame}
 
 \begin{frame}{Market power $\psi$}
-  \tiny Market power $\psi$ decreases monotonically as connectivity $p$ increases. In a denser network, competition among lenders intensifies, eroding the monopolistic markup. This is the mechanism through which connectivity drives interest rates downward.
+  \tiny Market power $\psi$ decreases monotonically as connectivity $p$ increases. 
+  In a denser network, the monopolistic markup is eroded. This is the mechanism through which connectivity drives interest rates downward.
   \begin{columns}[T]
     \begin{column}{0.75\textwidth}
             \begin{figure}
@@ -630,7 +656,6 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
       \end{figure}
     \end{column}
     \begin{column}{0.23\textwidth}
-      \centering
       \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{3pt}
       \begin{tabular}{lr}
         \toprule
@@ -649,12 +674,15 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
         0.121 & 0.4593 \\
         \bottomrule
       \end{tabular}
+       \\ 
+            Average value of market power of lenders in the simulations. 
     \end{column}
   \end{columns}
 \end{frame}
 
 \begin{frame}{Probability of bankruptcy $p_b$}
-  \tiny As connectivity increases, the probability of borrower bankruptcy rises. Lenders attempt to serve a larger number of clients, and the decline in interest rates reduces the screening incentive, making the system more fragile.
+  \tiny As connectivity increases, the probability of borrower bankruptcy rises. 
+  Lenders attempt to serve a larger number of clients and at the same time the system is being more fragile.
   \begin{columns}[T]
     \begin{column}{0.75\textwidth}
       \begin{figure}
@@ -663,7 +691,6 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
       \end{figure}
     \end{column}
     \begin{column}{0.23\textwidth}
-      \centering
       \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{3pt}
       \begin{tabular}{lr}
         \toprule
@@ -682,6 +709,8 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
         0.121 & 0.6667 \\
         \bottomrule
       \end{tabular}
+       \\ 
+            Average value of $p_b$ of borrowers in the simulations. 
     \end{column}
   \end{columns}
 \end{frame}
@@ -696,7 +725,6 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
       \end{figure}
     \end{column}
     \begin{column}{0.23\textwidth}
-      \centering
       \tiny\renewcommand{\arraystretch}{0.85}\setlength{\tabcolsep}{3pt}
       \begin{tabular}{lr}
         \toprule
@@ -715,6 +743,9 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
         0.121 & 1.2888 \\
         \bottomrule
       \end{tabular}
+             \\ 
+            Average sum of bad debt in the simulations. 
+
     \end{column}
   \end{columns}
 \end{frame}
@@ -724,18 +755,18 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
 \section{Conclusions}\label{sec:8}
 %======================================================================
 
-\begin{frame}{Key Findings}
+\begin{frame}{Findings (1/2)}
   As connectivity $p$ increases:
   \begin{enumerate}
-    \item The Giant Component Size increases sharply above the phase transition.
-    \item Market power decreases, and the equilibrium interest rate falls.
+    %\item The Giant Component Size increases sharply above the phase transition.
+    \item Market power decreases with $p$, and the equilibrium interest rate falls also.
     \item The probability of borrower bankruptcy rises, as lenders serve a larger number of clients.
     \item Bad debt accumulates, reflecting greater systemic exposure to default.
     \item Taken together, these results show that \textbf{an interest rate that remains too low for too long increases both the incidence of bankruptcies and the spread of contagion}.
   \end{enumerate}
 \end{frame}
 
-\begin{frame}{Key Findings}
+\begin{frame}{Findings (2/2)}
   \begin{enumerate}
     \item \textbf{Failure composition shifts}: rationing dominates at low $p$; repayment failure dominates at high $p$ as interest rates decline.
     \item The two opposing channels---lower rates from competition, and higher bankruptcy risk from greater connectivity---imply a \textbf{non-trivial trade-off} for regulators.
@@ -743,11 +774,11 @@ Monte Carlo simulations with $\mathcal{MC} = 50$ runs. $N=50$ banks, $T=1000$ pe
   \end{enumerate}
 \end{frame}
 
-\begin{frame}{Policy Implications}
+\begin{frame}{From here: reinforce learning for policy implications}
   \begin{itemize}
-    \item \textbf{Heterogeneity} is a root cause of systemic instability; the failure of large banks has disproportionate systemic effects.
-    \item Interbank lending should ideally be restricted among banks with \textbf{similar liquidity characteristics}.
-    \item Reserve requirements dampen cascades but \textbf{constrain growth}.
+    \item \textbf{Heterogeneity} is a root cause of systemic instability (failure of large banks).
+    \item Interbank lending restricted among banks with \textbf{similar liquidity characteristics}.
+    \item Reserve requirements dampen cascades but will \textbf{constrain growth}.
     %\item Risk diversification across many agents has \textbf{ambiguous} effects on total systemic stability.
     \item \textbf{Monetary policy implications:} an interest rate environment that remains too low for too long can increase connectivity-driven fragility, suggesting that macroprudential policy must account for the endogenous response of network structure.
   \end{itemize}
