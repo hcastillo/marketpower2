@@ -66,10 +66,13 @@
 
 \begin{frame}{Abstract: ABM, Interbank Market, and Contagion}
   \begin{itemize}
-    \item We use \textbf{Agent-Based Models} to study systemic risk in interbank credit networks.
-    \item The dynamics are driven by two key parameters: the \textbf{probability of attachment} $p$ Erd\H{o}s--R\'enyi graphs as interbank connections generator (exogenous) and the \textbf{interest rate} $r$ (endogenous).
-    \item As $p$ increases, the network becomes more connected, forming a giant component. Interest rates decline due to greater competition and reduced market power.
-    \item However, higher connectivity also raises the probability of borrower bankruptcy. Excessively low interest rates, maintained for too long, can be \textbf{detrimental to the stability of the system}.
+    \item \textbf{Agent-Based Model} to study systemic risk in interbank credit networks, with two key parameters:
+    \begin{itemize}
+    \item \textbf{Probability of attachment} $p$ of Erd\H{o}s--R\'enyi graphs as interbank connections generator (exogenous).
+    \item \textbf{Interest rate} $r$ (endogenous).    
+    \end{itemize}
+    \item As $p$ increases, the network becomes more connected and $r$ declines due to reduced market power $\psi$.
+    \item However, $p$ raises the probability of borrower bankruptcy $p_b$: excessively low interest rates, maintained for too long \textbf{reduces the stability of the system}.
   \end{itemize}
 \end{frame}
 
@@ -89,9 +92,9 @@
   Two opposing effects of network connectivity:
   \begin{itemize}
     \item \textbf{Benefit:} Increasing connectivity allows \textbf{risk sharing}---banks diversify exposure across more counterparties, lowering interest rates.
-    \item \textbf{Cost:} Excessive connectivity increases \textbf{systemic risk}---default propagates through the network, and lenders serving a larger number of clients face higher bankruptcy exposure.
-    \item Evidence: a \textbf{non-monotonic relationship} exists---low connectivity stabilizes by diluting shocks, but high connectivity facilitates cascading failures. Taken together, these effects imply that excessively low interest rates increase both bankruptcies and contagion.
+    \item \textbf{Cost:} Excessive connectivity increases \textbf{systemic risk}---default propagates through the network, and lenders serving a larger number of clients face higher bankruptcies.
   \end{itemize}
+  A \textbf{non-monotonic relationship} exists---low connectivity stabilizes by diluting shocks, but high connectivity facilitates cascading failures. Taken together, these effects imply that excessively low interest rates increase both bankruptcies and contagion.
 \end{frame}
 
 % \begin{frame}{Empirical Evidence}
@@ -105,7 +108,7 @@
 % \end{frame}
 
 \begin{frame}{Failure Channels in Financial Crises}
-  In literature, three primary propagation mechanisms of systemic failure are identified:
+  In literature, three primary propagation mechanisms of systemic failure:
   \begin{enumerate}
     \item \textbf{Bank runs:} self-fulfilling panics where depositors withdraw mass funds simultaneously.
     \item \textbf{Asset price contagion:} fire-sale spirals that depreciate assets across the system.
@@ -113,15 +116,15 @@
   \end{enumerate}
 \end{frame}
 
-\begin{frame}{Failure Channels in the Model}
-  In this model, we consider the three failure channels:
-  \begin{itemize}
-    \item \textbf{Rationing} (insufficient funding of borrower),
-    \item \textbf{Contagion} (lender suffers losses from borrower default),
-    \item \textbf{Repayment failure} (borrower cannot repay loan).
-  \end{itemize}
-  At low connectivity: rationing dominates; at high connectivity, repayment failure becomes the most relevant.
-\end{frame}
+% \begin{frame}{Failure Channels in the Model}
+%   The three failure channels of the model:
+%   \begin{itemize}
+%     \item \textbf{Rationing} (insufficient funding of borrower),
+%     \item \textbf{Contagion} (lender suffers losses from borrower default),
+%     \item \textbf{Repayment failure} (borrower cannot repay loan).
+%   \end{itemize}
+%   At low connectivity: rationing dominates; at high connectivity, repayment failure becomes the most relevant.
+% \end{frame}
 
 
 
@@ -183,17 +186,17 @@
   \begin{minipage}{0.85\textwidth}
     \vspace{3.5cm}
     \footnotesize
-    Each of the $\binom{N}{2}$ edges is included independently with prob. $p$. For $N=20$ banks:
+    Each of the $\binom{N}{2}$ edges is included independently with probability $p$. For $N=20$ banks:
     \begin{itemize}
       \item $p = 0$: isolated banks, no interbank market.
-      \item $p = 1/N = 0.05$: \textbf{phase transition}: giant component begins to emerge.
-      \item $p > 0.105$: network is saturated ($>92\%$ of banks connected): \textbf{supercritical regime}.
+      \item $p = 1/N = 0.05$: \textbf{phase transition}, when giant component begins to emerge.
+%      \item $p > 0.105$: network is saturated ($>92\%$ of banks connected): \textbf{supercritical regime}.
     \end{itemize}
   \end{minipage}
 \end{frame}
 }
 
-\begin{frame}{Why supercritical is relevant in this model}
+\begin{frame}{Network structure}
   \begin{columns}[T]
     \begin{column}{0.40\textwidth}
       \centering
@@ -206,13 +209,10 @@
       \includegraphics[width=\textwidth, trim=0 0 0 40, clip]{s01_erdos_renyi_10.png}
     \end{column}
   \end{columns}
+  The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank market; rather, it illustrates how connection density alters the probability and scale of contagion.
+
 \end{frame}
 
-
-
-\begin{frame}{Network Structure}
-The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank market; rather, it illustrates how connection density alters the probability and scale of contagion.
-\end{frame}
 
 
 %======================================================================
@@ -265,7 +265,7 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
   \begin{itemize}
     \item Larger banks (higher equity) exercise more market power.
     \item Borrower default probability:
-    $p_{b,j}^t = E_j^t / E_j^{t,\max}$.
+    $p_{b,j}^t = \frac{E_j^t}{E_j^{t,\max}} $.
     %\item Leverage: $\lambda_j^t = d_j^t / E_j^t$.
     \item As $p$ increases, the market becomes more competitive\ --- borrowers can choose among more lenders, reducing lenders' market power. However, this also allows lenders to serve more clients, increasing their exposure to borrower default.
   \end{itemize}
@@ -284,15 +284,15 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
   \end{block} 
   \begin{itemize}
     \item \textbf{Bankruptcy:} bank exits if $E_i^t < 0$.
-    \item \textbf{Fire sales:} last-resort option (blocked in this model to amplify contagion effects).
-    \item Failed banks replaced by new entrants with small initial capital.
+    \item \textbf{Fire sales:} last-resort option and only of $E$.
+    \item Failed banks replaced by new entrants with small initial capital (initial conditions).
     \item Endogenous interest rates affect bank earnings; low rates compress margins but also reduce the cost of borrowing, generating opposing effects on stability.
   \end{itemize}
 \end{frame}
 
 
 \begin{frame}{Failure Channels}
-  Three distinct causes of bank failure:
+  Three distinct causes of bank failure accounted in the model:
   \begin{enumerate}
     \item \textbf{Rationing:} borrower cannot secure sufficient funding.
     \item \textbf{Contagion:} lender suffers losses from borrower default (bad debt).
@@ -308,9 +308,9 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
 \section{Phase Transition}\label{sec:6}
 %======================================================================
 
-\begin{frame}[shrink=0.1]{Phase Transition}
+\begin{frame}{Phase Transition}
   \begin{itemize}
-    \item \textbf{Phase transition:} GCS jumps from $\sim 1$ to $\sim 46$ banks ($92\%$) as $p$ crosses the supercritical region (above $p_c=1/N$).
+    \item \textbf{Phase transition:} GCS jumps from $\sim 1$ to $\sim 46$ banks ($92\%$) as $p$ crosses the phase transition.
     \item \textbf{Low $p$:} rationing-dominated, high interest rates ($r \approx 3.0$), few loans granted.
     \item \textbf{High $p$:} repayment-failure-dominated, low interest rates ($r \approx 1.8$), saturated network.
     \item As the market becomes more competitive, lenders serve more clients, the probability of bankruptcy rises, and bad debt accumulates.
@@ -333,18 +333,18 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
           font=\scriptsize,
         ]
         \addplot[red, only marks, mark=*, mark size=1.5pt] coordinates {
-          (0.00001, 1.01)
-          (0.01092, 5.33)
+          %(0.00001, 1.01)
+          %(0.01092, 5.33)
           (0.02183, 14.83)
-          (0.03273, 30.72)
-          (0.04364, 41.42)
-          (0.05455, 45.87)
-          (0.06546, 47.90)
-          (0.07637, 48.88)
-          (0.08727, 49.38)
-          (0.09818, 49.66)
-          (0.10909, 49.83)
-          (0.12000, 49.90)
+          %(0.03273, 30.72)
+          %(0.04364, 41.42)
+          (0.05455,  16.87)
+          %(0.06546, 47.90)
+          %(0.07637, 48.88)
+          %(0.08727, 49.38)
+          %(0.09818, 49.66)
+          %(0.10909, 49.83)
+          %(0.12000, 49.90)
         };
         \addplot[black, thick] coordinates {
           (0.00001, 1.01)
@@ -360,10 +360,23 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
           (0.10909, 49.83)
           (0.12000, 49.90)
         };
+        \addplot[black, thick] coordinates {
+          (0.01092, 1.01)
+          (0.02183, 4.83)
+          (0.03273, 8.72)
+          (0.04364, 12.42)
+          (0.05455, 16.87)
+          (0.06546, 21.90)
+          (0.07637, 26.88)
+          (0.08727, 32.38)
+          (0.09818, 36.66)
+          (0.10909, 39.83)
+          (0.12000, 42.90)
+        };
         \draw[red, dashed, thick] (axis cs:0.02,0) -- (axis cs:0.02,55)
           node[pos=0.5, right, font=\tiny]{$p_c$};
         \draw[red, dotted, thick] (axis cs:0.055,0) -- (axis cs:0.055,55)
-          node[pos=0.5, right, font=\tiny]{$p_s$};
+          node[pos=0.5, right, font=\tiny]{$p_t$};
         \end{axis}
       \end{tikzpicture}
       \vspace{0.1cm}      
@@ -372,28 +385,29 @@ The Erd\H{o}s--R\'enyi model does not attempt to replicate the entire interbank 
         }
       \vspace{0.2cm} \\
       \footnotesize          
-      \textbf{Percolation threshold} $\langle k \rangle \approx 1$ (phase transition) for Erd\H{o}s--R\'enyi graph: \[
+      \textbf{Percolation threshold} $\langle k \rangle \approx 1$ for Erd\H{o}s--R\'enyi graph: \[
         p_c = \frac{1}{N} = \frac{1}{50} = 0.02
         \] \\
-      \textbf{Supercritical region} $\langle k \rangle = 2.14$, observed at $p_s = 0.055$. \\
+      In pruned graph, \textbf{phase transition} observed at $p = 0.055$, $\langle k \rangle = 2.14$ \\
         
     \end{column}
     \begin{column}{0.42\textwidth}
       \footnotesize
       \centering
-      \begin{tabular}{rr}
+      \begin{tabular}{rrr}
         \toprule
-        $p$ & GCS \\
+        $p$ & \scriptsize orig GCS & \scriptsize pruned\\
         \midrule
-        0.00001 & 1 \\
-        0.011 & 5 \\
-        \textbf{0.022} & \textbf{15} \\
-        0.033 & 31 \\
-        0.044 & 41 \\
-        \textbf{0.055} & \textbf{46} \\
-        0.065 & 48 \\
-        0.087 & 49 \\
-        $\geq 0.11$ & 50 \\
+        0.00001 & 1 & 0 \\
+        0.011 & 5 & 1 \\
+        \textbf{0.022} & \textbf{15} & 4 \\
+        0.033 & 31 & 8 \\
+        0.044 & 41 & 12 \\
+        \textbf{0.055} & 46 & \textbf{16} \\
+        0.065 & 48 & 25 \\
+        0.087 & 49 & 33 \\
+        0.110 & 50 & 39 \\
+        $\geq$ 0.15 & 50 & 50 \\
         \bottomrule
       \end{tabular}
     \end{column}
