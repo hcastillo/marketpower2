@@ -204,7 +204,12 @@ class LenderChange:
                     self.node_colors.append('steelblue')
                 else:
                     self.node_colors.append('royalblue')
-        dashed_edges = self._compute_dashed_edges(graph_to_draw) if not all_gray else set()
+        if hasattr(self, 'loan_edges') and self.loan_edges and not all_gray:
+            dashed_edges = self.loan_edges
+        elif not all_gray:
+            dashed_edges = self._compute_dashed_edges(graph_to_draw)
+        else:
+            dashed_edges = set()
         nx.draw(graph_to_draw, pos=self.node_positions, node_color=self.node_colors,
                 edge_color='lightgray', style='solid', arrows=False, with_labels=True)
         if dashed_edges:
@@ -249,19 +254,6 @@ class LenderChange:
         self.banks_graph, description = self.generate_banks_graph()
         self.banks_graph.type = self.GRAPH_NAME
 
-        if save_graph and (save_graph == 'all' or self.model.t in save_graph):
-             filename_for_file = f"_{self.GRAPH_NAME}"
-             if self.SAVE_THE_DIFFERENT_GRAPH_OF_EACH_STEP:
-                 filename_for_file += f"_{self.model.t}"
-             export_datafile = self.model.stats.export_datafile
-             if not export_datafile:
-                 export_datafile = "results"
-             destination_file_json = self.model.stats.get_export_path(export_datafile,
-                                                                           f"{filename_for_file}.json")
-             if not os.path.isfile(destination_file_json):
-                 self.save_graph_json(self.banks_graph, destination_file_json)
-                 self.save_graph_png(self.banks_graph, description, destination_file_json.replace('.json','.png'))
-
         self.model.log.debug("links ",
                              f"{self.GRAPH_NAME} (x,y)=x linked with y: " +
                              str(self.banks_graph.edges()) if self.banks_graph.edges() else "no edges in graph")
@@ -279,6 +271,30 @@ class LenderChange:
             else:
                 # i has money, it doesn't need a lender:
                 self.model.lenders[i] = -1
+        self.loan_edges = set()
+        for i in range(self.model.config.N):
+            if self.model.lenders[i] >= 0:
+                self.loan_edges.add((i, self.model.lenders[i]))
+        if save_graph and (save_graph == 'all' or self.model.t in save_graph):
+             filename_for_file = f"_{self.GRAPH_NAME}"
+             if self.SAVE_THE_DIFFERENT_GRAPH_OF_EACH_STEP:
+                 filename_for_file += f"_{self.model.t}"
+             export_datafile = self.model.stats.export_datafile
+             if not export_datafile:
+                 export_datafile = "results"
+             destination_file_json = self.model.stats.get_export_path(export_datafile,
+                                                                           f"{filename_for_file}.json")
+             if not os.path.isfile(destination_file_json):
+                 combined = nx.DiGraph()
+                 combined.add_nodes_from(self.banks_graph.nodes())
+                 for u, v in self.banks_graph.edges():
+                     combined.add_edge(u, v)
+                     combined.add_edge(v, u)
+                 for u, v in self.loan_edges:
+                     combined.add_edge(u, v, loan=True)
+                 combined.type = self.GRAPH_NAME
+                 self.save_graph_json(combined, destination_file_json)
+                 self.save_graph_png(self.banks_graph, description, destination_file_json.replace('.json','.png'))
         string_debug_lenders = ""
         for i in range(self.model.config.N):
             if self.model.lenders[i]>=0:

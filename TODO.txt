@@ -1,0 +1,94 @@
+This is a structured script for a 15-minute presentation based on the document presentation.pdf ("Market Power and Contagion in Interbank Networks") and the associated simulation results.
+________________________________________
+I. Introduction: The Fragility of the Status Quo (0:00 - 2:30)
+Speaker's Notes:
+•	The Context: Begin by referencing the 2008 Financial Crisis. The traditional economic view was that highly interconnected markets were more efficient and stable. However, the crisis proved that standard competitive equilibrium models failed to account for the complex interactions that actually amplify shocks.
+•	The Interbank Market: Explain that this market is not just a place to swap liquidity; it is a contagion vector. The failure of one bank can trigger a domino effect through interlocking exposures.
+•	The Research Goal: We use Agent-Based Modeling (ABM) to analyze how network connectivity and market power determine systemic risk.
+________________________________________
+II. The Model: Balance Sheets and Networks (2:30 - 5:00)
+Speaker's Notes:
+•	Bank Structure: Describe the bank's balance sheet: Assets (long-term loans, liquidity, and reserves) vs. Liabilities (deposits and equity).
+•	The Shocks: Deposits are subject to exogenous shocks every period. If a bank’s negative shock exceeds its liquidity, it must go to the interbank market to borrow.
+•	Connectivity ($p$): Introduce the Erdős–Rényi random graph. Here, $p$ is the probability that any two banks are connected. 
+o	Explain that as $p$ increases, the network shifts from isolated units to a integrated system.
+o	Point to the Giant Component Size (GCS): The transition occurs when a single connected group dominates the network. In our results, the GCS jumps to include all 50 banks as $p$ approaches $0.08$.
+________________________________________
+III. Interest Rates and Market Power (5:00 - 8:00)
+Speaker's Notes:
+•	The Pricing Mechanism: Interest rates ($r$) are endogenous. Banks are risk-neutral and seek to optimize expected profits.
+•	The Formula: Introduce $r = \frac{m}{p_j(1-\psi)}$. 
+o	$m$ is the screening cost.
+o	$p_j$ is the probability of the borrower surviving.
+o	$\psi$ represents Market Power.
+•	The Connectivity Effect: 
+o	In low-connectivity networks, lenders have high market power ($\psi$) because borrowers have few options. This leads to high "distress" interest rates.
+o	As $p$ increases, competition intensifies. Refer to the psi.png and ir.png graphs: market power erodes, and the interest rate falls significantly.
+•	The Paradox: While lower rates help borrowers in the short term, they also compress lender margins and reduce the incentive for rigorous risk screening.
+________________________________________
+IV. Phase Transition and Channels of Failure (8:00 - 11:30)
+Speaker's Notes:
+•	The Percolation Threshold: Analyze the radical shift in system behavior at the phase transition ($p \approx 0.08$).
+•	Channel 1: Rationing. In low-connectivity regimes (before the jump in gcs.png), banks fail because they simply cannot find a lender. This is credit rationing.
+•	Channel 2: Repayment Failure. As the network becomes "saturated" ($p > 0.08$), the risk changes. Borrowers can easily find funds, but the system accumulates fragility.
+•	The Rise of Contagion: Look at the bad_debt.png and prob_bankruptcy.png graphs. Beyond the threshold, even though interest rates are lower, the probability of bankruptcy and the volume of bad debt rise because lenders are serving a higher number of clients and spreading the risk too thin.
+________________________________________
+V. The Connectivity Trade-off (11:30 - 13:30)
+Speaker's Notes:
+•	The "Double-Edged Sword": Summarize the Risk-Sharing Trade-off. 
+o	Benefit: Increased connectivity allows for diversification and mutual insurance, initially boosting Equity and Reserves.
+o	Cost: Once connectivity is too high, the network acts as an "infection vector." A local shock that used to be contained now cascades through the entire system.
+•	The Plateau: Note how the equity.png and reserves.png graphs peak or plateau around the transition point. Adding more links beyond this point doesn't increase stability; it only increases the potential for a total systemic collapse.
+________________________________________
+VI. Conclusions and Policy Lessons (13:30 - 15:00)
+Speaker's Notes:
+•	Heterogeneity Matters: The root of instability often lies in agent size. The failure of one large bank has disproportionate systemic effects.
+•	Policy Suggestion 1: Interbank lending should be restricted between banks with similar liquidity profiles to prevent cross-sector contagion.
+•	Policy Suggestion 2: High reserve requirements are effective "firebreaks" that dampen cascades, but they come at the cost of reducing overall economic growth.
+•	Final Warning: Central banks must realize that keeping interest rates too low for too long encourages connectivity-driven fragility. Macroprudential policy must monitor not just the rates, but the endogenous structure of the network.
+________________________________________
+Advice for the Speaker: When discussing minutes 8 through 11, emphasize the inverse relationship between the ir.png (interest rate) and bad_debt.png (bad debt) graphs. Showing how bad debt stabilizes at a higher level exactly when interest rates hit their floor is the most compelling evidence of the "saturated network" risk.
+
+
+
+
+TODO
+
+The dynamics of the model are driven by two parameters: the probability of attachment, which is exogenous, and the interest rate, which is endogenous. As the literature suggests, increasing the probability of attachment makes the network more connected. In economic terms, this leads to a giant component in which all banks are linked together.
+
+The interest rate is the key variable determining the loan relationship between borrower and lender. Let us analyze the effect of the interest rate by varying the probability of attachment parameter. We observe that the interest rate decreases as P increases. This means that when the market moves toward higher competition, where borrowers can choose among a larger number of lenders, the interest rate declines. This occurs because market power also decreases.
+
+However, as connectivity increases, the probability of borrower bankruptcy also rises. This happens because lenders try to satisfy a larger number of clients. Taken together, these two effects lead to an important result: excessively low interest rates increase the number of bankruptcies and contagion in the system on the one end. 
+
+On the other hand, if the interest rate decreases when the probability of connection increases, lenders banks are able to satisfy a larger number of more critical clients, as reflected in the observed increase in the probability of bankruptcy. Consequently, the system becomes more fragile
+
+and the very end, It is very important to understand that an interest rate that remains too low for too long can be detrimental to the system.
+---
+
+The dynamics of the model are driven by two parameters: the probability of attachment, which is exogenous, and the interest rate, which is endogenous. As the literature suggests, increasing the probability of attachment makes the network more connected. In economic terms, this leads to a giant component in which all banks are linked together.
+
+The interest rate is the key variable determining the loan relationship between borrower and lender. Let us analyze the effect of the interest rate by varying the probability of attachment parameter. We observe that the interest rate decreases as P increases. This means that when the market moves toward higher competition, where borrowers can choose among a larger number of lenders, the interest rate declines. This occurs because market power also decreases.
+
+However, as connectivity increases, the probability of borrower bankruptcy also rises. This happens because lenders try to satisfy a larger number of clients. Taken together, these two effects lead to an important result: excessively low interest rates increase the number of bankruptcies and contagion in the system on the one end. 
+
+On the other hand, if the interest rate decreases when the probability of connection increases, lenders banks are able to satisfy a larger number of more critical clients, as reflected in the observed increase in the probability of bankruptcy. Consequently, the system becomes more fragile
+
+and the very end, It is very important to understand that an interest rate that remains too low for too long can be detrimental to the system.
+
+---
+The dynamics of the model are determined by two parameters: the probability of attachment, which is exogenous, and the interest rate, which is endogenous. As the existing literature suggests, an increase in the probability of attachment leads to a more connected network. In economic terms, this generates a giant component in which all banks become interconnected.
+
+The interest rate is a key determinant of the lending relationship between borrowers and lenders. To assess its role, we vary the probability of attachment and observe that the interest rate declines as 𝑃 increases. This result indicates that, as the market becomes more competitive and borrowers gain access to a larger set of lenders, interest rates tend to fall, reflecting a reduction in market power.
+
+Nevertheless, this greater degree of connectivity also has an important downside. As the network becomes denser, the probability of borrower bankruptcy increases, since lenders attempt to serve a larger number of clients. In this sense, the two effects jointly imply that excessively low interest rates may increase both the incidence of bankruptcies and the spread of contagion throughout the system. Moreover, when interest rates remain low for a prolonged period, lenders are able to satisfy a larger number of more critical clients, which is again associated with a higher probability of bankruptcy and, consequently, with greater fragility in the system.
+
+Overall, these results show that an interest rate that remains too low for too long can be detrimental to the stability of the system.
+
+. Gai y Kapadia llaman “vulnerable” al banco que cae con el default de un único vecino.
+Erdős-Rényi, el grado esperado es aproximadamente p(N-1). Por eso, al mover p cambias simultáneamente la conectividad media y la probabilidad de entrar o salir de la región crítica donde una perturbación idiosincrática puede convertirse en cascada sistémica.
+En redes small-world, el clustering alto crea circuitos locales de propagación, pero sin hubs tan dominantes.
+Empíricamente, muchas redes interbancarias reales muestran rasgos de core-periphery o degree distribution tipo scale-free, no de red aleatoria homogénea.
+
+La comparación relevante no es solo cuántos enlaces hay, sino cómo se reparten: small-world enfatiza proximidad y clustering; scale-free enfatiza concentración en hubs, con implicaciones distintas para robustez y cascadas.”
+
+Comparing other  

@@ -224,6 +224,7 @@ class Model:
         self.loaned = np.zeros(self.config.N, dtype=float)
         self.was_rationed = np.zeros(self.config.N, dtype=bool)
         self.prob_bankruptcy = np.zeros(self.config.N, dtype=float)
+        self.prob_surviving = np.zeros(self.config.N, dtype=float)
         self.leverage = np.zeros(self.config.N, dtype=float)
         self.haircut = np.zeros(self.config.N, dtype=float)
         self.capacity = np.zeros(self.config.N, dtype=float)
@@ -390,7 +391,8 @@ class Model:
         # 1. probability of bankruptcy: for borrowers, we can estimate it as E/max(E of borrowers), for lenders is nan:
         borrowers_E = self.E[self.d>0]
         max_e_borrowers = np.nanmax(borrowers_E) if len(borrowers_E) > 0 and not np.isnan(borrowers_E).all() else 1.0
-        self.prob_bankruptcy = np.where(self.d > 0, self.E / max_e_borrowers, np.nan)
+        self.prob_surviving = np.where(self.d > 0, self.E / max_e_borrowers, np.nan)
+        self.prob_bankruptcy = 1 - self.prob_surviving
         # max_e=0
         # for i in range(self.config.N):
         #     if self.d[i]>0:
@@ -448,7 +450,7 @@ class Model:
         for i in range(self.config.N):
             if self.d[i] > 0 and self.lenders[i] != -1:
                 psi = self.psi[self.lenders[i]]
-                denominator = self.prob_bankruptcy[i] * (1 - psi)
+                denominator = self.prob_surviving[i] * (1 - psi)
                 if denominator == 0 or np.isnan(denominator):
                     self.interest_rate[i] = self.config.max_interest_rate
                 else:
@@ -789,16 +791,18 @@ class Model:
             self.do_shock1()
             self.stats.compute_d1()
             self.stats.compute_potential_lenders()
+            self.stats.compute_equity_lenders()
+            self.stats.compute_equity_borrowers()
             self.setup_links()
             self.stats.compute_graph()
             self.do_interest_rate()
             self.stats.compute_psi()
             self.stats.compute_assets()
-            self.stats.compute_ir()
             self.stats.compute_capacity()
             self.stats.compute_prob_bankruptcy()
             self.log.debug_banks()
             self.do_loans()
+            self.stats.compute_ir()
             self.stats.compute_ir_weighted()
             self.stats.compute_rationing()
             self.stats.compute_num_loans()

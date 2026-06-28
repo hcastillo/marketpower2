@@ -33,6 +33,8 @@ class Statistics:
         self.communities_not_alone = []
         self.gcs = []
         self.potential_lenders = []
+        self.equity_lenders = []
+        self.equity_borrowers = []
         self.num_loans = []
         self.loans = []
         self.psi = []
@@ -40,6 +42,7 @@ class Statistics:
         self.bankruptcy_rationed = []
         self.bankruptcy_contagion = []
         self.ir = []
+        self.ir_all = []
         self.ir_max = []
         self.ir_min = []
         self.ir_weighted_max = []
@@ -64,6 +67,7 @@ class Statistics:
         self.profits = []
         self.correlation = []
         self.num_banks = []
+        self.prob_surviving = []
 
     # ---------------------------------------------------------------------------
     # Cross-correlation: psi vs other variables
@@ -431,20 +435,30 @@ class Statistics:
         self.var_D1.append(np.sum(self.model.varD1))
 
     def compute_ir(self):
-        self.ir.append( np.nanmean(self.model.interest_rate) )
-        self.ir_max.append( np.nanmax(self.model.interest_rate) )
-        self.ir_min.append( np.nanmin(self.model.interest_rate) )
-        
-    def compute_ir_weighted(self):
-        total_loans = np.nansum(self.model.l)
-        if total_loans > 0:
-            self.ir_weighted.append( np.nansum(self.model.interest_rate * self.model.l) / total_loans )
-            self.ir_weighted_max.append( np.nanmax(self.model.interest_rate * self.model.l) / total_loans )
-            self.ir_weighted_min.append( np.nanmin(self.model.interest_rate * self.model.l) / total_loans )
+        finite_mask = np.isfinite(self.model.interest_rate)
+        self.ir_all.append(np.nanmean(self.model.interest_rate[finite_mask]) if np.any(finite_mask) else np.nan)
+        borrower_mask = (self.model.l > 0) & finite_mask
+        if np.any(borrower_mask):
+            self.ir.append(np.nanmean(self.model.interest_rate[borrower_mask]))
+            self.ir_max.append(np.nanmax(self.model.interest_rate[borrower_mask]))
+            self.ir_min.append(np.nanmin(self.model.interest_rate[borrower_mask]))
         else:
-            self.ir_weighted.append( np.nan )
-            self.ir_weighted_max.append( np.nan )
-            self.ir_weighted_min.append( np.nan )
+            self.ir.append(np.nan)
+            self.ir_max.append(np.nan)
+            self.ir_min.append(np.nan)
+
+    def compute_ir_weighted(self):
+        finite_mask = np.isfinite(self.model.interest_rate)
+        borrower_mask = (self.model.l > 0) & finite_mask
+        total_loans = np.nansum(self.model.l[borrower_mask])
+        if total_loans > 0:
+            self.ir_weighted.append(np.nansum(self.model.interest_rate[borrower_mask] * self.model.l[borrower_mask]) / total_loans)
+            self.ir_weighted_max.append(np.nanmax(self.model.interest_rate[borrower_mask] * self.model.l[borrower_mask]) / total_loans)
+            self.ir_weighted_min.append(np.nanmin(self.model.interest_rate[borrower_mask] * self.model.l[borrower_mask]) / total_loans)
+        else:
+            self.ir_weighted.append(np.nan)
+            self.ir_weighted_max.append(np.nan)
+            self.ir_weighted_min.append(np.nan)
 
     def compute_d2(self):
         self.d2.append(np.nansum(self.model.d2))
@@ -485,6 +499,12 @@ class Statistics:
     def compute_potential_lenders(self):
         self.potential_lenders.append(np.sum(self.model.s>0))
 
+    def compute_equity_lenders(self):
+        self.equity_lenders.append(np.nansum(self.model.E[self.model.s > 0]))
+
+    def compute_equity_borrowers(self):
+        self.equity_borrowers.append(np.nansum(self.model.E[self.model.d > 0]))
+
     def compute_num_loans(self):
         self.num_loans.append(np.sum((self.model.l > 0) & ~np.isnan(self.model.l)))
         self.loans.append(np.nansum(self.model.l))
@@ -501,7 +521,8 @@ class Statistics:
         self.capacity.append(np.nanmean(self.model.capacity))
 
     def compute_prob_bankruptcy(self):
-        self.prob_bankruptcy.append(1 - np.nanmean(self.model.prob_bankruptcy))
+        self.prob_bankruptcy.append(np.nanmean(self.model.prob_bankruptcy))
+        self.prob_surviving.append(np.nanmean(self.model.prob_surviving))
 
     def compute_num_banks(self):
         self.num_banks.append(self.model.config.N)

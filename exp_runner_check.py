@@ -15,8 +15,6 @@ from itertools import product
 
 import lxml.builder
 import lxml.etree
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -296,7 +294,7 @@ class ExperimentRun:
                 param_name = next(iter(self.parameters)) if isinstance(self.parameters, dict) else self.NAME_OF_X_SERIES
                 if not param_name:
                     param_name = "$p$"
-                tex.write(f"        {param_name} & {i.replace('_', '\\_')}")
+                tex.write(f"        {param_name} & {i}")
                 if array_comparing and i in array_comparing:
                     tex.write(f" & {self.COMPARING_LABEL}")
                 if array_comparing2 and i in array_comparing2:
@@ -334,25 +332,21 @@ class ExperimentRun:
 
             plt.clf()
             fig, ax = plt.subplots()
-            ax2 = ax.twinx()
-            ax.plot(x, rat, linestyle=self.STYLE, marker="s", color="black",
+            ax.plot(x, rat, linestyle=self.STYLE, marker="s", color="red",
                     markerfacecolor="red", markeredgecolor="red", label="Rationing")
-            ax2.plot(x, cont, linestyle=self.STYLE, marker="o", color="darkgray",
-                     markerfacecolor="red", markeredgecolor="red", label="Contagion")
-            ax.plot(x, repay_fail, linestyle=self.STYLE, marker="o", color="lightgray",
+            ax.plot(x, cont, linestyle=self.STYLE, marker="o", color="red",
+                    markerfacecolor="red", markeredgecolor="red", label="Contagion")
+            ax.plot(x, repay_fail, linestyle=self.STYLE, marker="o", color="red",
                     markerfacecolor="white", markeredgecolor="red", label="Repayment fail.")
             plt.title(f"Bankruptcies by channel vs {title_x} MC={self.MC}")
             ax.set_xlabel(title_x, fontsize=6)
-            ax.set_ylabel("Rationing + Repayment fail.", fontsize=6)
-            ax2.set_ylabel("Contagion", fontsize=6)
+            ax.set_ylabel("Bankruptcies", fontsize=6)
             if self.XTICKS_SCALED and self.NAME_OF_X_SERIES:
                 pass
             else:
                 ax.set_xticks(x)
                 ax.set_xticklabels(plot_x_values, rotation=270, fontsize=5)
-            lines1, labels1 = ax.get_legend_handles_labels()
-            lines2, labels2 = ax2.get_legend_handles_labels()
-            ax.legend(lines1 + lines2, labels1 + labels2, loc="best")
+            plt.legend(loc="best")
             plt.savefig(f"{directory}bankruptcies_all.png", dpi=300)
             plt.close(fig)
 
@@ -381,9 +375,9 @@ class ExperimentRun:
                 tex.write("      \\centering\n")
                 tex.write("      \\tiny\n")
                 tex.write("      \\renewcommand{\\arraystretch}{0.85}\\setlength{\\tabcolsep}{3pt}\n")
-                tex.write("      \\textcolor{red}{$\\blacksquare$} Rationing (left)\n")
-                tex.write("      \\textcolor{red}{$\\bullet$} Contagion (right)\\par\n")
-                tex.write("      \\textcolor{red}{$\\circ$} Repayment fail. (left)\\par\n")
+                tex.write("      \\textcolor{red}{$\\blacksquare$} Rationing\n")
+                tex.write("      \\textcolor{red}{$\\bullet$} Contagion\\par\n")
+                tex.write("      \\textcolor{red}{$\\circ$} Repayment fail.\\par\n")
                 tex.write("      \\vspace{0.15cm}\n")
                 tex.write("      \\begin{tabular}{lrrr}\n")
                 tex.write("        \\toprule\n")
@@ -571,7 +565,6 @@ class ExperimentRun:
             }
         )
         model.configure(**config_values)
-        model.save_graph = getattr(self, 'save_graph', False)
 
         model.lenderchange = self.ALGORITHM(model)
         model.stats.define_output_format(self.OUTPUT_FORMAT)
@@ -772,84 +765,8 @@ class ExperimentRun:
             offset += 1
         return result_mc
 
-    def _generate_boxplot(self, results_x_axis, directory):
-        if not hasattr(self, '_boxplot_data') or 'equity_borrowers' not in self._boxplot_data:
-            return
-        data = self._boxplot_data['equity_borrowers']
-        x_labels = []
-        for x in results_x_axis:
-            try:
-                x_labels.append(float(x.split('=')[-1].strip()))
-            except (ValueError, IndexError):
-                x_labels.append(x)
-        fig, ax = plt.subplots()
-        bp = ax.boxplot(data, labels=x_labels, patch_artist=True, showmeans=True)
-        for patch in bp['boxes']:
-            patch.set_facecolor('lightblue')
-        title = f"Boxplot of equity_borrowers vs {self.NAME_OF_X_SERIES} MC={self.MC}"
-        ax.set_title(title)
-        ax.set_xlabel(self.NAME_OF_X_SERIES if self.NAME_OF_X_SERIES else 'Parameter')
-        ax.set_ylabel('Equity of Borrowers')
-        plt.savefig(f"{directory}boxplot.png", dpi=300)
-        plt.close(fig)
-        with open(f"{directory}boxplot.txt", "w", encoding="utf-8") as f:
-            f.write(f"Boxplot: equity_borrowers vs {self.NAME_OF_X_SERIES} MC={self.MC}\n")
-            f.write(f"{'x':>10} {'median':>10} {'Q1':>10} {'Q3':>10} {'min':>10} {'max':>10} {'n':>6}\n")
-            for i, values in enumerate(data):
-                arr = np.array(values)
-                median = np.median(arr)
-                q1 = np.percentile(arr, 25)
-                q3 = np.percentile(arr, 75)
-                mi = np.min(arr)
-                mx = np.max(arr)
-                f.write(f"{x_labels[i]:>10.4f} {median:>10.4f} {q1:>10.4f} {q3:>10.4f} {mi:>10.4f} {mx:>10.4f} {len(values):>6}\n")
-            f.write("\nOutliers (beyond 1.5*IQR):\n")
-            for i, values in enumerate(data):
-                arr = np.array(values)
-                q1 = np.percentile(arr, 25)
-                q3 = np.percentile(arr, 75)
-                iqr = q3 - q1
-                lower = q1 - 1.5 * iqr
-                upper = q3 + 1.5 * iqr
-                outlier_mask = (arr < lower) | (arr > upper)
-                outliers = arr[outlier_mask]
-                if len(outliers) > 0:
-                    outlier_indices = ', '.join(f'#{idx}' for idx in np.where(outlier_mask)[0])
-                    f.write(f"  {self.NAME_OF_X_SERIES}={x_labels[i]:.4f}: {len(outliers)} outliers ({outlier_indices}): {', '.join(f'{v:.4f}' for v in outliers)}\n")
-        param_name = self.NAME_OF_X_SERIES if self.NAME_OF_X_SERIES else "x"
-        with open(f"{directory}boxplot.tex", "w", encoding="utf-8") as tex:
-            tex.write("\\begin{frame}{" + title.replace("_", "\\_") + "}\n")
-            tex.write("  \\begin{columns}[T]\n")
-            tex.write("    \\begin{column}{0.75\\textwidth}\n")
-            tex.write("      \\begin{figure}\n")
-            tex.write("        \\centering\n")
-            tex.write("        \\includegraphics[width=\\textwidth, trim=0 0 0 38, clip]{boxplot.png}\n")
-            tex.write("      \\end{figure}\n")
-            tex.write("    \\end{column}\n")
-            tex.write("    \\begin{column}{0.23\\textwidth}\n")
-            tex.write("      \\centering\n")
-            tex.write("      \\tiny\\renewcommand{\\arraystretch}{0.85}\\setlength{\\tabcolsep}{3pt}\n")
-            tex.write("      \\begin{tabular}{lrrrrr}\n")
-            tex.write("        \\toprule\n")
-            tex.write(f"        {param_name} & median & Q1 & Q3 & min & max \\\\\n")
-            tex.write("        \\midrule\n")
-            for i, values in enumerate(data):
-                arr = np.array(values)
-                median = np.median(arr)
-                q1 = np.percentile(arr, 25)
-                q3 = np.percentile(arr, 75)
-                mi = np.min(arr)
-                mx = np.max(arr)
-                tex.write(f"        {x_labels[i]:.4f} & {median:.4f} & {q1:.4f} & {q3:.4f} & {mi:.4f} & {mx:.4f} \\\\\n")
-            tex.write("        \\bottomrule\n")
-            tex.write("      \\end{tabular}\n")
-            tex.write("    \\end{column}\n")
-            tex.write("  \\end{columns}\n")
-            tex.write("\\end{frame}\n")
-
     def do(self, clear_previous_results=False, reverse_execution=False):
         self.log_replaced_data = ""
-        self._boxplot_data = {}
         initial_time = time.perf_counter()
         if clear_previous_results:
             results_to_plot = {}
@@ -872,7 +789,6 @@ class ExperimentRun:
                 if reverse_execution:
                     array_of_parameters = reversed(list(array_of_parameters))
                 for model_parameters in array_of_parameters:
-                    self._per_run_tmp = {}
                     result_iteration_to_check = pd.DataFrame()
                     filename_for_iteration = self.get_filename_for_iteration(model_parameters, model_configuration)
                     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -941,11 +857,6 @@ class ExperimentRun:
                                             or (correlation_coefficient > 0 and p_value <= 0.10)
                                         )
                                     )
-                            for col in result_mc.columns:
-                                if col == 't':
-                                    continue
-                                col_mean = pd.to_numeric(result_mc[col], errors="coerce").mean()
-                                self._per_run_tmp.setdefault(col, []).append(col_mean)
                             result_iteration = pd.concat([result_iteration, result_mc])
 
                     if montecarlo_iteration_perfect_correlation:
@@ -966,8 +877,6 @@ class ExperimentRun:
                             results_to_plot[k] = [[mean_estimated, std_estimated]]
                     results_x_axis.append(self.get_title_for(model_configuration, model_parameters))
                     position_inside_seeds_for_random += self.MC
-                    for col, values in self._per_run_tmp.items():
-                        self._boxplot_data.setdefault(col, []).append(values)
                     progress_bar.next()
 
             progress_bar.finish()
@@ -982,8 +891,6 @@ class ExperimentRun:
                 self.save_csv(results_to_plot, results_x_axis, f"{self.OUTPUT_DIRECTORY}/")
             else:
                 self.save_gdt(results_to_plot, results_x_axis, f"{self.OUTPUT_DIRECTORY}/")
-            if self._boxplot_data:
-                self._generate_boxplot(results_x_axis, f"{self.OUTPUT_DIRECTORY}/")
         else:
             print(f"Loaded data from previous work from {self.OUTPUT_DIRECTORY}")
         results_comparing, results_comparing2 = self.load_comparing(results_x_axis)
@@ -1124,38 +1031,6 @@ class Runner:
                                  help="Load existing results.gdt and regenerate plots only")
         self.parser.add_argument("--directory", type=str, default=None,
                                  help="Override OUTPUT_DIRECTORY (path to results.gdt)")
-        self.parser.add_argument("--graph", type=str, default='',
-                                 help="Save Erdos-Renyi graphs as PNG and JSON. Comma-separated time steps (e.g. 5,10,15) or 'all' for every step")
-        self.parser.add_argument("--report", default=False, action=argparse.BooleanOptionalAction,
-                                 help="Generate report.tex from existing .tex files in OUTPUT_DIRECTORY")
-
-    def generate_report(self, directory):
-        directory = directory.rstrip("/\\") + "/"
-        order = ["bankruptcies", "bankruptcies_all", "ir", "psi", "prob_bankruptcy", "bad_debt", "profits", "rationing", "boxplot"]
-        preamble = r"""\documentclass{beamer}
-\usetheme{Warsaw}
-\definecolor{pantone2955}{RGB}{0,51,96}
-\setbeamercolor{structure}{fg=pantone2955}
-\usepackage[utf8]{inputenc}
-\usepackage[english]{babel}
-\usepackage{tikz}
-\usepackage{pgfplots}
-\usepackage{booktabs}
-\usepackage{times}
-\usepackage[T1]{fontenc}
-
-\begin{document}
-"""
-        with open(f"{directory}report.tex", "w", encoding="utf-8") as f:
-            f.write(preamble)
-            for name in order:
-                tex_path = f"{directory}{name}.tex"
-                if os.path.isfile(tex_path):
-                    f.write(f"\\input{{{name}.tex}}\n")
-                else:
-                    print(f"Warning: {tex_path} not found, skipping")
-            f.write("\\end{document}\n")
-        print(f"Generated {directory}report.tex")
 
     def plot_only(self, experiment, directory):
         directory = directory.rstrip("/\\") + "/"
@@ -1182,12 +1057,6 @@ class Runner:
             experiment.clear_results()
         experiment.error_bar = args.errorbar
         experiment.plot_removing_first = args.plot_removing_first
-        if args.graph.lower() == 'all':
-            experiment.save_graph = 'all'
-        elif args.graph:
-            experiment.save_graph = set(int(x) for x in args.graph.split(','))
-        else:
-            experiment.save_graph = set()
         directory = args.directory if args.directory else experiment.OUTPUT_DIRECTORY
         if args.listnames:
             experiment.listnames()
@@ -1201,9 +1070,8 @@ class Runner:
             if args.statsb:
                 experiment.do_stats_market()
             return experiment
-        elif args.report:
-            self.generate_report(directory)
         elif args.statsb:
             experiment.do_stats_market()
         else:
             self.parser.print_help()
+
