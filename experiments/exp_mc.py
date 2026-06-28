@@ -62,13 +62,20 @@ if __name__ == "__main__":
             exp = ExpMC()
             exp.MC = mc
             exp.OUTPUT_DIRECTORY = mc_dir
+            exp.error_bar = args.errorbar
+            exp.plot_removing_first = args.plot_removing_first
+            exp.save_graph = set()
+            if args.graph.lower() == 'all':
+                exp.save_graph = 'all'
+            elif args.graph:
+                exp.save_graph = set(int(x) for x in args.graph.split(','))
             exp.clear_results()
-            exp.do()
+            exp.do(clear_previous_results=args.clear, reverse_execution=args.reverse)
             psi_src = os.path.join(mc_dir, "psi.png")
             psi_dst = os.path.join(base_dir, f"psi_mc{mc}.png")
             if os.path.exists(psi_src):
                 shutil.copy2(psi_src, psi_dst)
-                print(f"  → {psi_dst}")
+                print(f"  -> {psi_dst}")
     elif args.plot:
         directory = args.directory if args.directory else ExpMC.OUTPUT_DIRECTORY
         runner.plot_only(ExpMC(), directory)

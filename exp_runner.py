@@ -790,6 +790,8 @@ class ExperimentRun:
         ax.set_title(title)
         ax.set_xlabel(self.NAME_OF_X_SERIES if self.NAME_OF_X_SERIES else 'Parameter')
         ax.set_ylabel('Equity of Borrowers')
+        plt.xticks(rotation=90, fontsize=8)
+        plt.tight_layout()
         plt.savefig(f"{directory}boxplot.png", dpi=300)
         plt.close(fig)
         with open(f"{directory}boxplot.txt", "w", encoding="utf-8") as f:
