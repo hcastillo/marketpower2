@@ -43,7 +43,7 @@ class Config:
     # μ+ω⋅0.5=0.7+(0.35⋅0.5)=0.875
     # Economic Meaning: An expected value of 0.875 implies that, on average, each bank experiences a loss of 12.5% of its deposits in each period.
     mu: float = 0.7  # mi µ
-    omega: float = 0.35 # omega ω   
+    omega: float = 0.55 # omega ω   
 
     # banks initial parameters
     # L + C + R = D + E

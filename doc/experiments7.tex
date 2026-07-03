@@ -1,0 +1,583 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}
+  \definecolor{pantone2955}{RGB}{0,51,96}
+  \setbeamercolor{structure}{fg=pantone2955}
+}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\title{Shock parameters}
+\subtitle{Parameter $\omega = 0.55$ vs $\omega = 0.35$ (MC = 500)}
+\author{Héctor Castillo Andreu}
+\institute{Universitat Jaume I}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Comparison of asset\_i}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/asset_i.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/asset_i.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of asset\_j}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/asset_j.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/asset_j.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of bad\_debt}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/bad_debt.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/bad_debt.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of bankruptcies}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/bankruptcies.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/bankruptcies.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of bankruptcies\_all}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/bankruptcies_all.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/bankruptcies_all.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of bankruptcy\_contagion}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/bankruptcy_contagion.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/bankruptcy_contagion.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of bankruptcy\_rationed}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/bankruptcy_rationed.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/bankruptcy_rationed.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of capacity}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/capacity.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/capacity.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}{Comparison of d1}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/d1.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/d1.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of d2}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/d2.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/d2.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of deposits}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/deposits.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/deposits.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of equity}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/equity.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/equity.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of equity\_borrowers}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/equity_borrowers.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/equity_borrowers.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of equity\_lenders}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/equity_lenders.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/equity_lenders.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of gcs}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/gcs.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/gcs.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of grade\_avg}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/grade_avg.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/grade_avg.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of ir}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/ir.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/ir.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of ir\_max}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/ir_max.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/ir_max.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of ir\_min}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/ir_min.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/ir_min.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of ir\_weighted}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/ir_weighted.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/ir_weighted.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of ir\_weighted\_max}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/ir_weighted_max.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/ir_weighted_max.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of ir\_weighted\_min}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/ir_weighted_min.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/ir_weighted_min.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of leverage}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/leverage.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/leverage.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of liquidity}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/liquidity.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/liquidity.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of loans}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/loans.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/loans.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of num\_loans}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/num_loans.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/num_loans.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of num\_of\_rationed}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/num_of_rationed.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/num_of_rationed.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of potential\_lenders}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/potential_lenders.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/potential_lenders.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of prob\_bankruptcy}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/prob_bankruptcy.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/prob_bankruptcy.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of prob\_surviving}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/prob_surviving.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/prob_surviving.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of profits}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/profits.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/profits.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of psi}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/psi.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/psi.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of rationing}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/rationing.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/rationing.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of reserves}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/reserves.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/reserves.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of var\_D}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/var_D.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/var_D.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of var\_D1}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/var_D1.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/var_D1.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Comparison of var\_D2}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.55$ (02/07)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/0207/exp_min_p_0_01_mc500/var_D2.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{\large $\omega = 0.35$ (23/06)}\\[0.2cm]
+      \includegraphics[width=\textwidth]{C:/experiments/2306/exp_min_p_0_01_smooth_mc500_no_smooth/var_D2.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}

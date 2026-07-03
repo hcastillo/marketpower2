@@ -29,7 +29,7 @@ class ExpMC500(exp_runner.ExperimentRun):
 
 if __name__ == "__main__":
     exp = ExpMC500()
-    exp.OUTPUT_DIRECTORY = "/experiments/2606/exp_min_p_0_01_mc500"
+    exp.OUTPUT_DIRECTORY = "/experiments/0207/exp_min_p_0_01_mc500"
     exp.error_bar = False
     exp.plot_removing_first = True
     exp.save_graph = set()

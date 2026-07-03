@@ -50,6 +50,10 @@ class Statistics:
         self.ir_weighted = []        
         self.var_D1 = []
         self.var_D2 = []
+        self.num_shock2_neg = []
+        self.num_shock2_pos = []
+        self.num_shock1_neg = []
+        self.num_shock1_pos = []
         self.var_D = []
         self.leverage = []
         self.d1 = []
@@ -433,7 +437,9 @@ class Statistics:
     def compute_d1(self):
         self.d1.append(np.nansum(self.model.d))
         self.var_D1.append(np.sum(self.model.varD1))
-
+        self.num_shock1_neg.append(np.count_nonzero(self.model.varD1 < 0))
+        self.num_shock1_pos.append(np.count_nonzero(self.model.varD1 > 0))
+        
     def compute_ir(self):
         finite_mask = np.isfinite(self.model.interest_rate)
         self.ir_all.append(np.nanmean(self.model.interest_rate[finite_mask]) if np.any(finite_mask) else np.nan)
@@ -464,6 +470,8 @@ class Statistics:
         self.d2.append(np.nansum(self.model.d2))
         self.var_D2.append(np.sum(self.model.varD2))
         self.var_D.append(self.model.varD1[-1] + self.model.varD2[-1])
+        self.num_shock2_neg.append(np.count_nonzero(self.model.varD2 < 0))
+        self.num_shock2_pos.append(np.count_nonzero(self.model.varD2 > 0))
         
     def compute_leverage(self):
         self.leverage.append((self.d2[-1]+self.d1[-1]) / self.equity[-1] if self.equity[-1] > 0 else np.nan)

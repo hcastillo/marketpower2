@@ -696,14 +696,19 @@ class ExperimentRun:
             if k.strip() == "t":
                 continue
             mean_individual_execution = pd.to_numeric(individual_execution[k], errors="coerce").mean()
-            means = []
-            for i in range(self.MC):
-                means.append(
-                    pd.to_numeric(
-                        array_all_data[k][i * self.T : (i * self.T) + (self.T - 1)],
-                        errors="coerce",
-                    ).mean()
-                )
+            vals = pd.to_numeric(array_all_data[k], errors="coerce").values
+            try:
+                vals_reshaped = vals.reshape(self.MC, self.T)
+                means = np.nanmean(vals_reshaped[:, :-1], axis=1)
+            except ValueError:
+                means = []
+                for i in range(self.MC):
+                    means.append(
+                        pd.to_numeric(
+                            array_all_data[k][i * self.T : (i * self.T) + (self.T - 1)],
+                            errors="coerce",
+                        ).mean()
+                    )
             q1 = np.percentile(means, 25)
             q3 = np.percentile(means, 75)
             iqr = q3 - q1
@@ -772,30 +777,32 @@ class ExperimentRun:
             offset += 1
         return result_mc
 
-    def _generate_boxplot(self, results_x_axis, directory):
-        if not hasattr(self, '_boxplot_data') or 'equity_borrowers' not in self._boxplot_data:
+    def _boxplot_for_column(self, col, results_x_axis, directory):
+        if col not in self._boxplot_data:
             return
-        data = self._boxplot_data['equity_borrowers']
+        data = self._boxplot_data[col]
         x_labels = []
         for x in results_x_axis:
             try:
-                x_labels.append(float(x.split('=')[-1].strip()))
+                x_labels.append(round(float(x.split('=')[-1].strip()), 3))
             except (ValueError, IndexError):
                 x_labels.append(x)
+        ylabel_map = {'equity_borrowers': 'Equity of Borrowers', 'num_loans': 'Number of Loans', 'loans': 'Total Loans'}
+        ylabel = ylabel_map.get(col, col.replace('_', ' ').title())
+        title = f"Boxplot of {col} vs {self.NAME_OF_X_SERIES} MC={self.MC}"
         fig, ax = plt.subplots()
         bp = ax.boxplot(data, labels=x_labels, patch_artist=True, showmeans=True)
         for patch in bp['boxes']:
             patch.set_facecolor('lightblue')
-        title = f"Boxplot of equity_borrowers vs {self.NAME_OF_X_SERIES} MC={self.MC}"
         ax.set_title(title)
         ax.set_xlabel(self.NAME_OF_X_SERIES if self.NAME_OF_X_SERIES else 'Parameter')
-        ax.set_ylabel('Equity of Borrowers')
+        ax.set_ylabel(ylabel)
         plt.xticks(rotation=90, fontsize=8)
         plt.tight_layout()
-        plt.savefig(f"{directory}boxplot.png", dpi=300)
+        plt.savefig(f"{directory}{col}_boxplot.png", dpi=300)
         plt.close(fig)
-        with open(f"{directory}boxplot.txt", "w", encoding="utf-8") as f:
-            f.write(f"Boxplot: equity_borrowers vs {self.NAME_OF_X_SERIES} MC={self.MC}\n")
+        with open(f"{directory}{col}_boxplot.txt", "w", encoding="utf-8") as f:
+            f.write(f"Boxplot: {col} vs {self.NAME_OF_X_SERIES} MC={self.MC}\n")
             f.write(f"{'x':>10} {'median':>10} {'Q1':>10} {'Q3':>10} {'min':>10} {'max':>10} {'n':>6}\n")
             for i, values in enumerate(data):
                 arr = np.array(values)
@@ -819,13 +826,13 @@ class ExperimentRun:
                     outlier_indices = ', '.join(f'#{idx}' for idx in np.where(outlier_mask)[0])
                     f.write(f"  {self.NAME_OF_X_SERIES}={x_labels[i]:.4f}: {len(outliers)} outliers ({outlier_indices}): {', '.join(f'{v:.4f}' for v in outliers)}\n")
         param_name = self.NAME_OF_X_SERIES if self.NAME_OF_X_SERIES else "x"
-        with open(f"{directory}boxplot.tex", "w", encoding="utf-8") as tex:
+        with open(f"{directory}{col}_boxplot.tex", "w", encoding="utf-8") as tex:
             tex.write("\\begin{frame}{" + title.replace("_", "\\_") + "}\n")
             tex.write("  \\begin{columns}[T]\n")
             tex.write("    \\begin{column}{0.75\\textwidth}\n")
             tex.write("      \\begin{figure}\n")
             tex.write("        \\centering\n")
-            tex.write("        \\includegraphics[width=\\textwidth, trim=0 0 0 38, clip]{boxplot.png}\n")
+            tex.write(f"        \\includegraphics[width=\\textwidth, trim=0 0 0 38, clip]{{{col}_boxplot.png}}\n")
             tex.write("      \\end{figure}\n")
             tex.write("    \\end{column}\n")
             tex.write("    \\begin{column}{0.23\\textwidth}\n")
@@ -848,6 +855,11 @@ class ExperimentRun:
             tex.write("    \\end{column}\n")
             tex.write("  \\end{columns}\n")
             tex.write("\\end{frame}\n")
+
+    def _generate_boxplot(self, results_x_axis, directory):
+        cols = ['equity_borrowers', 'num_loans', 'loans']
+        for col in cols:
+            self._boxplot_for_column(col, results_x_axis, directory)
 
     def do(self, clear_previous_results=False, reverse_execution=False):
         self.log_replaced_data = ""
@@ -877,78 +889,100 @@ class ExperimentRun:
                     self._per_run_tmp = {}
                     result_iteration_to_check = pd.DataFrame()
                     filename_for_iteration = self.get_filename_for_iteration(model_parameters, model_configuration)
-                    with concurrent.futures.ProcessPoolExecutor() as executor:
-                        results_mc = {
-                            executor.submit(
-                                self.load_or_execute_model,
-                                model_configuration,
-                                model_parameters,
-                                filename_for_iteration,
-                                i,
-                                clear_previous_results,
-                                seeds_for_random[i + position_inside_seeds_for_random],
-                            ): i
-                            for i in range(self.MC)
-                        }
-                        for future in concurrent.futures.as_completed(results_mc):
-                            result_iteration_to_check = pd.concat([result_iteration_to_check, future.result()])
+                    loaded_results = {}
+                    missing_indices = []
+                    for i in range(self.MC):
+                        filename_gdt = f"{self.OUTPUT_DIRECTORY}/{filename_for_iteration}_{i}.gdt"
+                        if os.path.isfile(filename_gdt) and not clear_previous_results:
+                            df, _ = self.read_gdt(filename_gdt)
+                            loaded_results[i] = df
+                        else:
+                            missing_indices.append(i)
+                    if missing_indices:
+                        with concurrent.futures.ProcessPoolExecutor() as executor:
+                            futures = {
+                                executor.submit(
+                                    self.load_or_execute_model,
+                                    model_configuration,
+                                    model_parameters,
+                                    filename_for_iteration,
+                                    i,
+                                    clear_previous_results,
+                                    seeds_for_random[i + position_inside_seeds_for_random],
+                                ): i
+                                for i in missing_indices
+                            }
+                            for future in concurrent.futures.as_completed(futures):
+                                loaded_results[futures[future]] = future.result()
+                    result_iteration_to_check = pd.concat([loaded_results[i] for i in range(self.MC)])
 
                     result_iteration = pd.DataFrame()
                     position_inside_seeds_for_random -= self.MC
                     montecarlo_iteration_perfect_correlation = True
                     correlation_coefficient = p_value = 0
-                    with concurrent.futures.ProcessPoolExecutor() as executor:
-                        results_mc = {
-                            executor.submit(
-                                self.load_model_and_rerun_till_ok,
-                                model_configuration,
-                                model_parameters,
-                                filename_for_iteration,
-                                i,
-                                clear_previous_results,
-                                seeds_for_random,
-                                position_inside_seeds_for_random,
-                                result_iteration_to_check,
-                            ): i
-                            for i in range(self.MC)
-                        }
+                    results_mc_dict = {}
+                    rerun_indices = []
+                    for i in range(self.MC):
+                        res_df = loaded_results[i]
+                        if self.data_seems_ok(res_df, result_iteration_to_check):
+                            results_mc_dict[i] = res_df
+                        else:
+                            rerun_indices.append(i)
+                    if rerun_indices:
+                        with concurrent.futures.ProcessPoolExecutor() as executor:
+                            futures = {
+                                executor.submit(
+                                    self.load_model_and_rerun_till_ok,
+                                    model_configuration,
+                                    model_parameters,
+                                    filename_for_iteration,
+                                    i,
+                                    clear_previous_results,
+                                    seeds_for_random,
+                                    position_inside_seeds_for_random,
+                                    result_iteration_to_check,
+                                ): i
+                                for i in rerun_indices
+                            }
+                            for future in concurrent.futures.as_completed(futures):
+                                results_mc_dict[futures[future]] = future.result()
 
-                        for i, future in enumerate(concurrent.futures.as_completed(results_mc)):
-                            result_mc = future.result()
-                            if "bankruptcies" in result_mc and not (
-                                np.all(result_mc["bankruptcies"] == 0)
-                                or np.all(result_mc["bankruptcies"] == result_mc["bankruptcies"].iloc[0])
-                                or np.all(result_mc["ir"] == 0)
-                                or np.all(result_mc["ir"] == result_mc["ir"].iloc[0])
-                            ):
-                                with warnings.catch_warnings():
-                                    warnings.simplefilter("ignore", scipy.stats.NearConstantInputWarning)
-                                    correlation_coefficient, p_value = scipy.stats.pearsonr(
-                                        result_mc["ir"], result_mc["bankruptcies"]
+                    for i in range(self.MC):
+                        result_mc = results_mc_dict[i]
+                        if "bankruptcies" in result_mc and not (
+                            np.all(result_mc["bankruptcies"] == 0)
+                            or np.all(result_mc["bankruptcies"] == result_mc["bankruptcies"].iloc[0])
+                            or np.all(result_mc["ir"] == 0)
+                            or np.all(result_mc["ir"] == result_mc["ir"].iloc[0])
+                        ):
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore", scipy.stats.NearConstantInputWarning)
+                                correlation_coefficient, p_value = scipy.stats.pearsonr(
+                                    result_mc["ir"], result_mc["bankruptcies"]
+                                )
+                                correlation_coefficient1, p_value1 = scipy.stats.pearsonr(
+                                    result_mc["ir"][1:], result_mc["bankruptcies"][:-1]
+                                )
+                                correlation_file.write(
+                                    f"{filename_for_iteration}_{i} = {model_configuration} {model_parameters}\n"
+                                )
+                                correlation_file.write(format_correlation_values(0, correlation_coefficient, p_value))
+                                correlation_file.write(
+                                    format_correlation_values(1, correlation_coefficient1, p_value1)
+                                )
+                                montecarlo_iteration_perfect_correlation = (
+                                    montecarlo_iteration_perfect_correlation
+                                    and (
+                                        (correlation_coefficient1 > 0 and p_value1 <= 0.10)
+                                        or (correlation_coefficient > 0 and p_value <= 0.10)
                                     )
-                                    correlation_coefficient1, p_value1 = scipy.stats.pearsonr(
-                                        result_mc["ir"][1:], result_mc["bankruptcies"][:-1]
-                                    )
-                                    correlation_file.write(
-                                        f"{filename_for_iteration}_{i} = {model_configuration} {model_parameters}\n"
-                                    )
-                                    correlation_file.write(format_correlation_values(0, correlation_coefficient, p_value))
-                                    correlation_file.write(
-                                        format_correlation_values(1, correlation_coefficient1, p_value1)
-                                    )
-                                    montecarlo_iteration_perfect_correlation = (
-                                        montecarlo_iteration_perfect_correlation
-                                        and (
-                                            (correlation_coefficient1 > 0 and p_value1 <= 0.10)
-                                            or (correlation_coefficient > 0 and p_value <= 0.10)
-                                        )
-                                    )
-                            for col in result_mc.columns:
-                                if col == 't':
-                                    continue
-                                col_mean = pd.to_numeric(result_mc[col], errors="coerce").mean()
-                                self._per_run_tmp.setdefault(col, []).append(col_mean)
-                            result_iteration = pd.concat([result_iteration, result_mc])
+                                )
+                        for col in result_mc.columns:
+                            if col == 't':
+                                continue
+                            col_mean = pd.to_numeric(result_mc[col], errors="coerce").mean()
+                            self._per_run_tmp.setdefault(col, []).append(col_mean)
+                        result_iteration = pd.concat([result_iteration, result_mc])
 
                     if montecarlo_iteration_perfect_correlation:
                         montecarlo_iteration_perfect_correlations[
@@ -1133,7 +1167,7 @@ class Runner:
 
     def generate_report(self, directory):
         directory = directory.rstrip("/\\") + "/"
-        order = ["bankruptcies", "bankruptcies_all", "ir", "psi", "prob_bankruptcy", "bad_debt", "profits", "rationing", "boxplot"]
+        order = ["bankruptcies", "bankruptcies_all", "ir", "psi", "prob_bankruptcy", "bad_debt", "profits", "rationing", "equity_borrowers_boxplot", "num_loans_boxplot", "loans_boxplot"]
         preamble = r"""\documentclass{beamer}
 \usetheme{Warsaw}
 \definecolor{pantone2955}{RGB}{0,51,96}
