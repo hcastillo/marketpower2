@@ -33,29 +33,16 @@ class Statistics:
         self.communities_not_alone = []
         self.gcs = []
         self.potential_lenders = []
-        self.equity_lenders = []
-        self.equity_borrowers = []
         self.num_loans = []
         self.loans = []
         self.psi = []
         self.bankruptcies = []
         self.bankruptcy_rationed = []
-        self.bankruptcy_contagion = []
         self.ir = []
-        self.ir_all = []
-        self.ir_max = []
-        self.ir_min = []
-        self.ir_weighted_max = []
-        self.ir_weighted_min = []
-        self.ir_weighted = []        
+        self.ir_avg = []
         self.var_D1 = []
         self.var_D2 = []
-        self.num_shock2_neg = []
-        self.num_shock2_pos = []
-        self.num_shock1_neg = []
-        self.num_shock1_pos = []
         self.var_D = []
-        self.leverage = []
         self.d1 = []
         self.d2 = []
         self.asset_i = []
@@ -70,8 +57,8 @@ class Statistics:
         self.equity = []
         self.profits = []
         self.correlation = []
+        self.initial_N = []
         self.num_banks = []
-        self.prob_surviving = []
 
     # ---------------------------------------------------------------------------
     # Cross-correlation: psi vs other variables
@@ -149,7 +136,6 @@ class Statistics:
     def finish(self):
         self.determine_cross_correlation()
         if self.model.log.interactive:
-            print('\n')
             self.print_cross_correlation_summary()
         self.save( export_datafile=self.export_datafile, export_description=str(self.model.config))
         result = pd.DataFrame()
@@ -198,7 +184,7 @@ class Statistics:
             and np.isfinite(sign_change_ratio)
             and sign_change_ratio > 0.35
             and np.isfinite(near_zero_step_ratio)
-            and near_zero_step_ratio < 0.05
+            and near_zero_step_ratio < 0.04
         )
 
         validity_text = 'OK' if is_valid else 'KO'
@@ -207,7 +193,7 @@ class Statistics:
             f'finite values >=99%: {finite_ratio * 100:.2f}%; '
             f'std(diff)>0.25: {std_diff:.2f}; '
             f'sign_change_ratio > 0.35: {sign_change_ratio:.2f}; '
-            f'near_zero_step_ratio < 0.05: {near_zero_step_ratio:.2f}'
+            f'near_zero_step_ratio < 0.04: {near_zero_step_ratio:.2f}'
         )
     
     def generate_gdt_file(self, filename, header, selected_indices=None, include_real_t=False):
@@ -283,7 +269,8 @@ class Statistics:
         file_header = ''
         for line_header in header:
             file_header += '# {}\n'.format(line_header)
-        file_header += f"# pd.read_csv('file{self.output_format}',header={len(header) + 1}', delimiter='{delimiter}')\nt"
+        file_header += "# pd.read_csv('file{}',header={}', delimiter='{}')\nt".format(self.output_format,
+                                                                                       len(header) + 1, delimiter)
         data_series = list(self.enumerate_time_series_results())
         if selected_indices is None:
             selected_indices = list(range(self.get_observation_count()))
@@ -430,58 +417,26 @@ class Statistics:
     def compute_bankruptcies(self):
         self.bankruptcies.append(np.nansum(self.model.failed))
         failed_with_rationing = np.logical_and(self.model.failed > 0, self.model.was_rationed)
-        failed_with_contagion = np.logical_and(self.model.failed > 0, self.model.bad_debt > 0)
         self.bankruptcy_rationed.append(np.nansum(failed_with_rationing))
-        self.bankruptcy_contagion.append(np.nansum(failed_with_contagion))
 
     def compute_d1(self):
         self.d1.append(np.nansum(self.model.d))
         self.var_D1.append(np.sum(self.model.varD1))
-        self.num_shock1_neg.append(np.count_nonzero(self.model.varD1 < 0))
-        self.num_shock1_pos.append(np.count_nonzero(self.model.varD1 > 0))
-        
-    def compute_ir(self):
-        finite_mask = np.isfinite(self.model.interest_rate)
-        self.ir_all.append(np.nanmean(self.model.interest_rate[finite_mask]) if np.any(finite_mask) else np.nan)
-        borrower_mask = (self.model.l > 0) & finite_mask
-        if np.any(borrower_mask):
-            self.ir.append(np.nanmean(self.model.interest_rate[borrower_mask]))
-            self.ir_max.append(np.nanmax(self.model.interest_rate[borrower_mask]))
-            self.ir_min.append(np.nanmin(self.model.interest_rate[borrower_mask]))
-        else:
-            self.ir.append(np.nan)
-            self.ir_max.append(np.nan)
-            self.ir_min.append(np.nan)
 
-    def compute_ir_weighted(self):
-        finite_mask = np.isfinite(self.model.interest_rate)
-        borrower_mask = (self.model.l > 0) & finite_mask
-        total_loans = np.nansum(self.model.l[borrower_mask])
-        if total_loans > 0:
-            self.ir_weighted.append(np.nansum(self.model.interest_rate[borrower_mask] * self.model.l[borrower_mask]) / total_loans)
-            self.ir_weighted_max.append(np.nanmax(self.model.interest_rate[borrower_mask] * self.model.l[borrower_mask]) / total_loans)
-            self.ir_weighted_min.append(np.nanmin(self.model.interest_rate[borrower_mask] * self.model.l[borrower_mask]) / total_loans)
-        else:
-            self.ir_weighted.append(np.nan)
-            self.ir_weighted_max.append(np.nan)
-            self.ir_weighted_min.append(np.nan)
+    def compute_ir(self):
+        self.ir.append( np.nanmean(self.model.interest_rate) )
 
     def compute_d2(self):
-        self.d2.append(np.nansum(self.model.d2))
+        self.d2.append(np.nansum(self.model.d))
         self.var_D2.append(np.sum(self.model.varD2))
         self.var_D.append(self.model.varD1[-1] + self.model.varD2[-1])
-        self.num_shock2_neg.append(np.count_nonzero(self.model.varD2 < 0))
-        self.num_shock2_pos.append(np.count_nonzero(self.model.varD2 > 0))
-        
-    def compute_leverage(self):
-        self.leverage.append((self.d2[-1]+self.d1[-1]) / self.equity[-1] if self.equity[-1] > 0 else np.nan)
 
     def compute_liquidity(self):
         self.liquidity.append(np.nansum(self.model.C))
 
-    def compute_rationing(self):
-        self.rationing.append(np.nansum(self.model.rationing))
-        self.num_of_rationed.append(np.sum(self.model.rationing >0))
+    def compute_rationing(self, num_of_rationed, total_rationed):
+        self.rationing.append(total_rationed)
+        self.num_of_rationed.append(num_of_rationed)
 
     def compute_profits(self, profits_paid):
         self.profits.append(profits_paid)
@@ -507,17 +462,15 @@ class Statistics:
     def compute_potential_lenders(self):
         self.potential_lenders.append(np.sum(self.model.s>0))
 
-    def compute_equity_lenders(self):
-        self.equity_lenders.append(np.nansum(self.model.E[self.model.s > 0]))
-
-    def compute_equity_borrowers(self):
-        self.equity_borrowers.append(np.nansum(self.model.E[self.model.d > 0]))
-
     def compute_num_loans(self):
         self.num_loans.append(np.sum((self.model.l > 0) & ~np.isnan(self.model.l)))
         self.loans.append(np.nansum(self.model.l))
 
-
+    def compute_ir_avg(self):
+        if np.any(self.model.l > 0):
+            self.ir_avg.append(np.mean(self.model.interest_rate[self.model.l > 0]))
+        else:
+            self.ir_avg.append(np.nan)
 
     def compute_graph(self):
         self.gcs.append(self.model.lenderchange.determine_current_graph_gcs())
@@ -529,8 +482,9 @@ class Statistics:
         self.capacity.append(np.nanmean(self.model.capacity))
 
     def compute_prob_bankruptcy(self):
-        self.prob_bankruptcy.append(np.nanmean(self.model.prob_bankruptcy))
-        self.prob_surviving.append(np.nanmean(self.model.prob_surviving))
+        self.prob_bankruptcy.append(1 - np.nanmean(self.model.prob_bankruptcy))
 
     def compute_num_banks(self):
+        self.initial_N.append(self.model.initial_N)
         self.num_banks.append(self.model.config.N)
+

@@ -22,8 +22,8 @@ class ExpMC500_0207(exp_runner1.ExperimentRun):
     T = 1000
     MC = 500
     ALGORITHM = LenderChange
-    parameters = {"p": np.linspace(0.012, 0.122, num=12)}
-    config = {}
+    parameters = {"p": np.r_[np.linspace(0.012, 0.122, num=12), 0.5, 1] }
+    config = { "omega": 0.55 }
     LENGTH_FILENAME_PARAMETER = 5
     LENGTH_FILENAME_CONFIG = 0
     SEED_FOR_EXECUTION = 2027
@@ -33,7 +33,7 @@ class ExpMC500_0207(exp_runner1.ExperimentRun):
 
 if __name__ == "__main__":
     exp = ExpMC500_0207()
-    exp.OUTPUT_DIRECTORY = "C:/experiments/0207/exp_min_p_0_01_mc500"
+    exp.OUTPUT_DIRECTORY = "C:/experiments/0707/exp_min_p_0_01_mc500_omega05"
     exp.error_bar = False
     exp.plot_removing_first = True
     exp.save_graph = set()

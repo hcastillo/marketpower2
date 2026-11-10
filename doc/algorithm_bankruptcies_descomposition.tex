@@ -1,0 +1,38 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{tikz}
+\usepackage{booktabs}
+\geometry{margin=1in}
+
+\begin{document}
+\pagestyle{empty}
+
+\section*{Bankruptcy decomposition over $p$}
+
+For each experiment, the total bankruptcies are decomposed into three components:
+\[
+\text{bankruptcies}_t = \text{bankruptcy\_rationed}_t + \text{bankruptcy\_contagion}_t + \text{bankruptcy\_borrowers}_t.
+\]
+
+The stacked area plot used in the comparison script is:
+\[
+\mathcal{B}(p) = \Big( b^{\mathrm{rat}}(p), b^{\mathrm{cont}}(p), b^{\mathrm{bor}}(p) \Big),
+\]
+with
+\[
+b^{\mathrm{rat}}(p) = \text{bankruptcy\_rationed}(p), \quad
+b^{\mathrm{cont}}(p) = \text{bankruptcy\_contagion}(p), \quad
+b^{\mathrm{bor}}(p) = \text{bankruptcy\_borrowers}(p).
+\]
+
+The cumulative stacked flow is then
+\[
+\sum_{k \in \{\mathrm{rat}, \mathrm{cont}, \mathrm{bor}\}} b^k(p).
+\]
+
+\end{document}

@@ -1,0 +1,131 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+
+\begin{document}
+\pagestyle{empty}
+
+\section*{Reinforcement Learning over capacity}
+
+We model the control problem as a Markov decision process (MDP)
+\[
+\mathcal{M} = (\mathcal{S}, \mathcal{A}, P, R, \gamma).
+\]
+
+At each time step $t$, the state is
+\[
+s_t = \big(C^{\max}_t, C^{\min}_t, C^{\mathrm{avg}}_t, r^{\max}_t, r^{\min}_t, r^{\mathrm{avg}}_t\big).
+\]
+
+The policy chooses a continuous control action
+\[
+a_t \sim \pi_\theta(a_t \mid s_t), \qquad a_t = \alpha_t \in [0,1].
+\]
+
+The haircut channel is modified as
+\[
+h_t^{\alpha} = \alpha_t\, h_t,
+\qquad
+c_t^{i,j,\alpha} = (1 - h_t^{\alpha}) A_t^j.
+\]
+
+Since $\alpha_t \in [0,1]$ and $h_t \in [0,1]$, the product remains in $[0,1]$.
+This action only changes haircut and credit capacity.
+
+The immediate reward is
+\[
+\mathcal{R}_t = \text{loans}_t - \lambda_b\,\text{bankruptcies}_t,
+\]
+with $\lambda_b > 0$ a penalty weight.
+
+The objective is to maximize the expected discounted return
+\[
+J(\theta) = \mathbb{E}_{\pi_\theta}\left[ \sum_{t=0}^{T-1} \gamma^t \mathcal{R}_t \right].
+\]
+
+PPO optimizes the clipped surrogate objective
+\[
+L^{\mathrm{CLIP}}(\theta) =
+\mathbb{E}_t\left[
+\min\big(
+\rho_t(\theta)\,\hat{A}_t,
+\mathrm{clip}(\rho_t(\theta), 1-\varepsilon, 1+\varepsilon)\,\hat{A}_t
+\big)
+\right],
+\]
+where
+\[
+\rho_t(\theta) = \frac{\pi_\theta(a_t\mid s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)}.
+\]
+
+The advantage estimate is computed with GAE:
+\[
+\delta_t = \mathcal{R}_t + \gamma V(s_{t+1}) - V(s_t),
+\qquad
+\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}.
+\]
+
+\newpage
+\section*{Reinforcement Learning over $\psi$}
+
+We use the same MDP structure
+\[
+\mathcal{M} = (\mathcal{S}, \mathcal{A}, P, R, \gamma),
+\qquad
+s_t = \big(C^{\max}_t, C^{\min}_t, C^{\mathrm{avg}}_t, r^{\max}_t, r^{\min}_t, r^{\mathrm{avg}}_t\big).
+\]
+
+The policy chooses a continuous control action
+\[
+a_t \sim \pi_\theta(a_t \mid s_t), \qquad a_t = \beta_t \in [0,1].
+\]
+
+The endogenous lender power remains $\psi_t^i$, but the effective term in the
+interest-rate denominator is
+\[
+\psi_{t,\mathrm{eff}}^i = \beta_t\,\psi_t^i.
+\]
+
+The interest rate becomes
+\[
+r_t^{i,j} = \frac{m}{p_t^j\,(1 - \psi_{t,\mathrm{eff}}^i)}.
+\]
+
+This action only modulates the interest-rate channel.
+
+The immediate reward is
+\[
+\mathcal{R}_t = \text{loans}_t - \lambda_b\,\text{bankruptcies}_t,
+\]
+with $\lambda_b > 0$ a penalty weight.
+
+The objective is to maximize the expected discounted return
+\[
+J(\theta) = \mathbb{E}_{\pi_\theta}\left[ \sum_{t=0}^{T-1} \gamma^t \mathcal{R}_t \right].
+\]
+
+PPO optimizes the clipped surrogate objective
+\[
+L^{\mathrm{CLIP}}(\theta) =
+\mathbb{E}_t\left[
+\min\big(
+\rho_t(\theta)\,\hat{A}_t,
+\mathrm{clip}(\rho_t(\theta), 1-\varepsilon, 1+\varepsilon)\,\hat{A}_t
+\big)
+\right],
+\]
+where
+\[
+\rho_t(\theta) = \frac{\pi_\theta(a_t\mid s_t)}{\pi_{\theta\mathrm{old}}(a_t\mid s_t)}.
+\]
+
+The advantage estimate is computed with GAE:
+\[
+\delta_t = \mathcal{R}_t + \gamma V(s_{t+1}) - V(s_t),
+\qquad
+\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}.
+\]
+
+\end{document}

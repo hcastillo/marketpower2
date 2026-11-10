@@ -146,11 +146,18 @@ The dashboard template file is \texttt{templates/template\_simulation.html}.
 Different statistics can be obtained after running the model, either in \textbf{csv} output, or in \textbf{gdt} (Gretl format).
 This statistics collect data in each time for the average or individually, depending on the usage. Possible statistics obtained from the model are:
 
+\noindent In some RL experiments, the RL wrapper uses the total equity of the system as objective. The value is computed on the fly from the model state and is not stored as a persistent model statistic.
+
 \begin{itemize}
     \item \textbf{asset\_i}: Assets of the lender of this bank ($D + E$)
     \item \textbf{asset\_j}: Assets of the borrowers of this bank ($D + E$)
     \item \textbf{bad\_debt}: Sum of the bad debt
     \item \textbf{bankruptcies}: Number of banks that failed in this step
+    \item \textbf{bankruptcy\_borrowers}: Number of banks that in this step have a loan with a bank and failed in this step
+    \item \textbf{borrower\_loan\_count}: Accumulated number of times a bank has been borrower
+    \item \textbf{borrower\_total\_borrowed}: Accumulated borrowed amount for an individual bank
+    \item \textbf{borrowers\_failed\_ever\_count}: Number of banks that were borrowers at some point and eventually failed
+    \item \textbf{borrowers\_failed\_ever\_total}: Total amount borrowed by banks that were borrowers at some point and eventually failed
     \item \textbf{capacity}: Lender capacity ($1 - \frac{E}{E_{\max}}$) of the bank
     \item \textbf{communities}: Subsets of nodes with higher internal edge density than connections to the rest of the graph
     \item \textbf{communities\_not\_alone}:  Number of \textbf{communities} that are not formed by only one node
@@ -163,14 +170,15 @@ This statistics collect data in each time for the average or individually, depen
     \item \textbf{ir}: Interest rate $r$ of the bank who are potential lenders ($\Delta D>0$)
     \item \textbf{ir\_avg}: Average interest rate $r$ of the bank who have really loans with borrowers
     \item \textbf{liquidity}: Total liquidity $L$ of the Banks  $L + C + R = D + E$
-    \item \textbf{loans}: Total amount borrowed by the banks
-    \item \textbf{num\_loans}:  Num of loans. Value for \textbf{stats\_market} and normal one will be the same
+    \item \textbf{loans}: Total amount borrowed by the banks in the current step
+    \item \textbf{num\_loans}:  Number of loans granted in the current step
+    
     \item \textbf{num\_of\_rationed}: Number of banks that were rationed in this step (needed money and were without any possible lender)
     \item \textbf{potential\_lenders}: Number of banks in the first shock having a positive shock ($ \Delta D$)
     \item \textbf{prob\_bankruptcy}: Probability of bankruptcy $p_b=1-\frac{E}{E_{max}}$, between $[0..1]$
     \item \textbf{profits}: Profits obtained in that step
     \item \textbf{psi}: Power market ($psi$) of the banks who are potential lenders, value $[0..1]$
-    \item \textbf{rationing}: Total amount of the loans $l$ of the banks
+    \item \textbf{rationing}: Total amount of unmet loan demand of the banks
     \item \textbf{reserves}: Reserves $R$ in the balance $L + C + R = D + E$
     \item \textbf{var\_D}: Sum of $ \Delta D1$ and $\Delta D2$ 
     \item \textbf{var\_D1}: Amount of ($ \Delta D$) for the bank in first shock
@@ -212,7 +220,11 @@ Name & Type & Global & \textbf{stats\_market} & Individual & Graphs \\
 \textbf{asset\_j}          & float & $\overline{x}/0 $ & $\overline{x}/0$ & $\checkmark$ &  \\
 \textbf{bad\_debt}         & float & $ \sum$ &  $ \sum$ & $\checkmark$ & \\
 \textbf{bankruptcies}      & integer & $ \sum$ &  $ \sum$ & $\checkmark$ &  \\
-%\textbf{bankrupcty\_rationed} & integer & $ \sum$ &  $ \sum$ &  &  \\
+\textbf{bankruptcy\_borrowers} & integer & $ \sum$ &  $ \sum$ &  &  \\
+\textbf{borrower\_loan\_count} & integer & $ \sum$ &  $ \sum$ & $\checkmark$ &  \\
+\textbf{borrower\_total\_borrowed} & float & $ \sum$ &  $ \sum$ & $\checkmark$ &  \\
+\textbf{borrowers\_failed\_ever\_count} & integer & $ \sum$ &  $ \sum$ &  &  \\
+\textbf{borrowers\_failed\_ever\_total} & float & $ \sum$ &  $ \sum$ &  &  \\
 %\textbf{best\_lender}      &  integer &  $\checkmark$ & $\checkmark$  &  & \\
 %\textbf{best\_lender\_clients}  & integer &  $\checkmark$ &  $\checkmark$ &  & \\
 \textbf{capacity}                 & float &  $\overline{x}/nan $ & $\overline{x}/nan $ &  &  \\
@@ -234,6 +246,7 @@ Name & Type & Global & \textbf{stats\_market} & Individual & Graphs \\
 %\textbf{max\_lambda}      &  float &  $\checkmark$ & $\checkmark$ &  & \\
 %\textbf{num\_banks}        &  integer &  $\checkmark$ & $\checkmark$ &  & \\
 \textbf{loans}        & float &  $ \sum$ &  $ \sum$ & $\checkmark$ &  \\
+%\textbf{loan\_count}  & float &  &  & $\checkmark$ &  \\
 \textbf{num\_loans}        &  integer &  $ \checkmark$ &  $\checkmark$ & $\checkmark$ &  \\
 \textbf{num\_of\_rationed} & integer &  $\checkmark$ & $\checkmark$ &  & \\
 %\textbf{policy}            & float &  $\checkmark$ & $\checkmark$ &  & \\
@@ -245,6 +258,7 @@ Name & Type & Global & \textbf{stats\_market} & Individual & Graphs \\
 \textbf{rationing}         &  float &  $\sum$ &  $\sum$ &  & $\checkmark$  \\
 %\textbf{real\_t}         &  integer &  &  $\checkmark$ &  &   \\
 \textbf{reserves}          & float & $ \sum$ &  $ \sum$ &  & $\checkmark$ \\
+%\textbf{total\_borrowed}  & float &  &  & $\checkmark$ &  \\
 \textbf{var\_D,var\_D1,var\_D2} &  float &   $\sum$  &  $\sum$  &  &  $\checkmark$  \\
 %\textbf{systemic\_leverage} & float &  $\overline{x}$ & $ \overline{x} $  &  &  \\
 \hline

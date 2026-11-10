@@ -125,7 +125,7 @@ class Log:
         self.model_name = model_name
         if logfile:
             if not os.path.dirname(logfile):
-                logfile = '{}/{}'.format(self.model.statistics.OUTPUT_DIRECTORY, logfile)
+                logfile = '{}/{}'.format(self.model.stats.output_directory, logfile)
             fh = logging.FileHandler(logfile, 'a', 'utf-8')
             fh.setLevel(self.logLevel)
             fh.setFormatter(formatter)

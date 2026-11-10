@@ -160,6 +160,15 @@ usage. Possible statistics obtained from the model are:
 
 - **bankruptcies**: Number of banks that failed in this step
 
+- **bankrupcty_borrowers**: Number of banks that in this step have a
+  loan with a bank and failed in this step
+
+- **borrowers_failed_count**: Banks that failed in the past after being
+  borrowers (accumulated)
+
+- **borrowers_failed_total**: Total loaned to banks that failed in the
+  past after being borrowers (accumulated)
+
 - **capacity**: Lender capacity ($1 - \frac{E}{E_{\max}}$) of the bank
 
 - **communities**: Subsets of nodes with higher internal edge density
@@ -195,6 +204,8 @@ usage. Possible statistics obtained from the model are:
 
 - **loans**: Total amount borrowed by the banks
 
+- **loans_count**: Accumulated number of loans for an individual bank
+
 - **num_loans**: Num of loans. Value for **stats_market** and normal one
   will be the same
 
@@ -215,6 +226,9 @@ usage. Possible statistics obtained from the model are:
 - **rationing**: Total amount of the loans $l$ of the banks
 
 - **reserves**: Reserves $R$ in the balance $L + C + R = D + E$
+
+- **total_borrowed**: Accumulated in all steps of borrowed for an
+  individual bank
 
 - **var_D**: Sum of $\Delta D1$ and $\Delta D2$
 
@@ -249,6 +263,9 @@ classified as:
 | **asset_j** | float | $\overline{x}/0$ | $\overline{x}/0$ | $\checkmark$ |  |
 | **bad_debt** | float | $\sum$ | $\sum$ | $\checkmark$ |  |
 | **bankruptcies** | integer | $\sum$ | $\sum$ | $\checkmark$ |  |
+| **bankrupcty_borrowers** | integer | $\sum$ | $\sum$ |  |  |
+| **borrowers_failed_count** | integer | $\sum$ | $\sum$ |  |  |
+| **borrowers_failed_total** | integer | $\sum$ | $\sum$ |  |  |
 | **capacity** | float | $\overline{x}/nan$ | $\overline{x}/nan$ |  |  |
 | **communities** | integer |  |  |  | $\checkmark$ |
 | **communities_not_alone** | integer |  |  |  | $\checkmark$ |
@@ -261,6 +278,7 @@ classified as:
 | **ir,ir_avg** | float | $\overline{x}/0$ | $\overline{x} / nan$ | $\checkmark$ |  |
 | **liquidity** | float | $\sum$ | $\sum$ | $\checkmark$ |  |
 | **loans** | float | $\sum$ | $\sum$ | $\checkmark$ |  |
+| **loan_count** | float |  |  | $\checkmark$ |  |
 | **num_loans** | integer | $\checkmark$ | $\checkmark$ | $\checkmark$ |  |
 | **num_of_rationed** | integer | $\checkmark$ | $\checkmark$ |  |  |
 | **prob_bankruptcy** | float | $\overline{x}/nan$ | $\overline{x}/nan$ | $\checkmark$ |  |
@@ -268,6 +286,7 @@ classified as:
 | **psi** | float | $\overline{x}/0$ | $\overline{x}/nan$ |  | $\checkmark$ |
 | **rationing** | float | $\sum$ | $\sum$ |  | $\checkmark$ |
 | **reserves** | float | $\sum$ | $\sum$ |  | $\checkmark$ |
+| **total_borrowed** | float |  |  | $\checkmark$ |  |
 | **var_D,var_D1,var_D2** | float | $\sum$ | $\sum$ |  | $\checkmark$ |
 
 :  Legend for the different columns are: $\checkmark$=value without any

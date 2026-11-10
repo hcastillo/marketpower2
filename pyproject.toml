@@ -13,4 +13,6 @@ dependencies = [
     "pandas>=3.0.2",
     "progress>=1.6.1",
     "scipy>=1.17.1",
+    "gymnasium>=0.29.1",
+    "stable-baselines3>=2.3.0",
 ]

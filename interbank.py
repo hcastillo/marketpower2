@@ -10,7 +10,6 @@
 import argparse
 import json
 import logging
-import os
 import random
 import re
 import sys
@@ -33,16 +32,15 @@ class Config:
     p = 0.8
 
     # screening costs:
-    m = 0.025
+    m = 0.015
 
     # seed applied for random values (set during initialize)
     seed: int = 5
 
-    # shocks parameters (mi=0.7 omega=0.6 for perfect balance). less omega, more negative is the shock. 0.35 was the original value for omega
-    # Since U(0,1) has an average value of 0.5, the average shock multiplier is:
-    # μ+ω⋅0.5=0.7+(0.35⋅0.5)=0.875
-    # Economic Meaning: An expected value of 0.875 implies that, on average, each bank experiences a loss of 12.5% of its deposits in each period.
+    # shocks parameters: mi=0.7 omega=0.6 for perfect balance
+    # less omega, more negative is the shock
     mu: float = 0.7  # mi µ
+    # 0.6 perfect symmetrical shock, 0.5 es eagerly negative shock    
     omega: float = 0.55 # omega ω   
 
     # banks initial parameters
@@ -53,26 +51,14 @@ class Config:
     # R_i0=0.18
     D_i0: float = 9     # deposits
     E_i0: float = 1     # equity
-    r_i0: float = 0.02  # reserves
+    r_i0: float = 0.02  # initial rate
     
     # maximum interest rate that can be applied to a loan (to avoid infinite rates when bankruptcy probability is 0 or psi=1)
-    max_interest_rate: float = 30
+    max_interest_rate: float = 1
 
     # if false when a bank dies it's not replaced:
     allow_replacement_of_bankrupted : bool = True
-    replace_with_mode : bool = False
-    allow_use_of_L_to_pay_rationing : bool = False
-    NORMALIZE_IR_RANGE_01: float = 1.0
-    NORMALIZE_IR_RANGE_03: float = 3.0
-    normalize_ir_range_max: float = NORMALIZE_IR_RANGE_01
-    normalize_ir: bool = False
-    sqrt_ir: bool = False
-    robust2_ir: bool = False
-    robust_ir: bool = False
-    ROBUST_IR_QUANTILE_LOW: float = 5.0
-    ROBUST_IR_QUANTILE_HIGH: float = 95.0
-    robust_ir_quantile_low: float = ROBUST_IR_QUANTILE_LOW
-    robust_ir_quantile_high: float = ROBUST_IR_QUANTILE_HIGH
+    allow_use_of_L_to_pay_rationing : bool = True
 
     def __init__(self, T:int=-1, N:int=-1, seed:int=-1):
         if T>-1:
@@ -81,7 +67,6 @@ class Config:
             self.N = N
         if seed>-1:
             self.seed = seed
-        self.initialN = self.N
 
     def __str__(self, separator=''):
         description = sys.argv[0] if __name__ == '__main__' else ''
@@ -168,10 +153,10 @@ class Model:
 
     def __init__(self, T:int=-1, N:int=-1, seed:int=-1):
         self.config = Config(T, N, seed)
+        self.initial_N = self.config.N
         self.stats = Stats(self)
         self.log = Log(self)
         self.lenderchange = lc.LenderChange(self)
-        self.save_graph = False
         self.init()
 
     def configure_json(self, json_string: str):
@@ -206,6 +191,7 @@ class Model:
 
     def init(self):
         self.t = 0
+        self.initial_N = self.config.N
         self.C = np.zeros(self.config.N, dtype=float)
         self.bad_debt = np.zeros(self.config.N, dtype=float)
         self.failed = np.zeros(self.config.N, dtype=int)
@@ -216,15 +202,15 @@ class Model:
         self.L = np.zeros(self.config.N, dtype=float)
         self.R = np.zeros(self.config.N, dtype=float)
         self.s = np.zeros(self.config.N, dtype=float)
+        self.s2 = np.zeros(self.config.N, dtype=float)
         self.d = np.zeros(self.config.N, dtype=float)
+        self.d2 = np.zeros(self.config.N, dtype=float)
         self.lenders = np.zeros(self.config.N, dtype=int)
         self.l = np.zeros(self.config.N, dtype=float)
-        self.d2 = np.zeros(self.config.N, dtype=float)
-        self.rationing = np.zeros(self.config.N, dtype=float)
         self.loaned = np.zeros(self.config.N, dtype=float)
+        self.rationing = np.zeros(self.config.N, dtype=float)
         self.was_rationed = np.zeros(self.config.N, dtype=bool)
         self.prob_bankruptcy = np.zeros(self.config.N, dtype=float)
-        self.prob_surviving = np.zeros(self.config.N, dtype=float)
         self.leverage = np.zeros(self.config.N, dtype=float)
         self.haircut = np.zeros(self.config.N, dtype=float)
         self.capacity = np.zeros(self.config.N, dtype=float)
@@ -255,6 +241,7 @@ class Model:
             "d",
             "lenders",
             "l",
+            "loaned",
             "rationing",
             "was_rationed",
             "prob_bankruptcy",
@@ -286,7 +273,7 @@ class Model:
         return self.stats.finish()
 
     def setup_links(self):
-        self.lenderchange.setup_links(save_graph=self.save_graph)
+        self.lenderchange.setup_links(save_graph=False)
 
     def do_shock2(self, shock_values=None):
         # only when d>0 we will obtain a second shock:
@@ -298,10 +285,11 @@ class Model:
         else:
             self.varD2 = shock_values
             newD = self.D + self.varD2
-        newD[ newD<0 ] = 0
         newR = self.config.reserves * newD
         varR = newR - self.R
         self.D = newD
+        self.log.debug("shock2", f"ΔD={self.log.format_number(self.varD2)}")
+
         self.C += self.varD2 - varR
         self.R = newR
 
@@ -313,7 +301,7 @@ class Model:
         self.s2 = np.where( self.C>=0, self.C, 0)
         # and C<0 is impossible: those are zero now:
         self.C[ self.C<0 ] = 0
-        # self.R[ self.C<0 ] = 0
+        self.R[ self.C<0 ] = 0
 
 
         # for i in range(self.config.N):
@@ -383,16 +371,13 @@ class Model:
         #             self.C[i] = 0
 
     def do_interest_rate(self):
-        selected_ir_transformations = (
-            int(self.config.normalize_ir) + int(self.config.sqrt_ir) + int(self.config.robust_ir) + int(self.config.robust2_ir)
-        )
-        if selected_ir_transformations > 1:
-            raise ValueError("normalize_ir, sqrt_ir, robust_ir and robust2_ir are mutually exclusive")
+        #TODO we can estimate prob bankruptcy for each borrower counting only its possible lenders
+        #     more heterogeneous 
+
         # 1. probability of bankruptcy: for borrowers, we can estimate it as E/max(E of borrowers), for lenders is nan:
         borrowers_E = self.E[self.d>0]
         max_e_borrowers = np.nanmax(borrowers_E) if len(borrowers_E) > 0 and not np.isnan(borrowers_E).all() else 1.0
-        self.prob_surviving = np.where(self.d > 0, self.E / max_e_borrowers, np.nan)
-        self.prob_bankruptcy = 1 - self.prob_surviving
+        self.prob_bankruptcy = np.where(self.d > 0, self.E / max_e_borrowers, np.nan)
         # max_e=0
         # for i in range(self.config.N):
         #     if self.d[i]>0:
@@ -422,9 +407,7 @@ class Model:
         #     else:
         #         self.haircut[i] = np.nan
         # 4. capacity:
-        #TODO
-        self.capacity = np.where( self.d>0, self.d, np.nan)
-        #self.capacity = np.where( self.d>0, (1 - self.haircut) * self.d, np.nan)
+        self.capacity = np.where( self.d>0, (1 - self.haircut) * self.d, np.nan)
         # for i in range(self.config.N):
         #     if self.d[i]>0 and max_leverage:
         #         self.capacity[i] = (1 - self.haircut[i]) * self.d[i]
@@ -450,66 +433,13 @@ class Model:
         for i in range(self.config.N):
             if self.d[i] > 0 and self.lenders[i] != -1:
                 psi = self.psi[self.lenders[i]]
-                denominator = self.prob_surviving[i] * (1 - psi)
+                denominator = self.prob_bankruptcy[i] * (1 - psi)
                 if denominator == 0 or np.isnan(denominator):
                     self.interest_rate[i] = self.config.max_interest_rate
                 else:
-                    self.interest_rate[i] = min(self.config.m / denominator, self.config.max_interest_rate)
+                    self.interest_rate[i] = self.config.m / denominator
             else:
                 self.interest_rate[i] = np.nan
-
-        if self.config.normalize_ir:
-            finite_mask = np.isfinite(self.interest_rate)
-            if np.any(finite_mask):
-                min_ir = np.min(self.interest_rate[finite_mask])
-                max_ir = np.max(self.interest_rate[finite_mask])
-                normalize_ir_range_max = self.config.normalize_ir_range_max
-                if normalize_ir_range_max <= 0:
-                    raise ValueError("normalize_ir_range_max must be greater than 0")
-                if max_ir > min_ir:
-                    self.interest_rate[finite_mask] = (
-                        ((self.interest_rate[finite_mask] - min_ir) / (max_ir - min_ir)) * normalize_ir_range_max
-                    )
-                else:
-                    self.interest_rate[finite_mask] = 0.0
-        elif self.config.sqrt_ir:
-            finite_mask = np.isfinite(self.interest_rate)
-            non_negative_mask = finite_mask & (self.interest_rate >= 0)
-            self.interest_rate[non_negative_mask] = np.sqrt(self.interest_rate[non_negative_mask])
-            self.interest_rate[finite_mask & (self.interest_rate < 0)] = np.nan
-        elif self.config.robust_ir:
-            finite_mask = np.isfinite(self.interest_rate)
-            if np.any(finite_mask):
-                finite_values = self.interest_rate[finite_mask]
-                normalize_ir_range_max = self.config.normalize_ir_range_max
-                if normalize_ir_range_max <= 0:
-                    raise ValueError("normalize_ir_range_max must be greater than 0")
-
-                q_low = float(self.config.robust_ir_quantile_low)
-                q_high = float(self.config.robust_ir_quantile_high)
-                if q_low < 0 or q_high > 100 or q_low >= q_high:
-                    raise ValueError("robust_ir quantiles must satisfy 0 <= low < high <= 100")
-
-                low_value = np.percentile(finite_values, q_low)
-                high_value = np.percentile(finite_values, q_high)
-                if high_value > low_value:
-                    clipped = np.clip(finite_values, low_value, high_value)
-                    transformed = (clipped - low_value) / (high_value - low_value)
-                    self.interest_rate[finite_mask] = transformed * normalize_ir_range_max
-                else:
-                    self.interest_rate[finite_mask] = 0.0
-        elif self.config.robust2_ir:
-            finite_mask = np.isfinite(self.interest_rate)
-            if np.any(finite_mask):
-                finite_values = self.interest_rate[finite_mask]
-                q_low = float(self.config.robust_ir_quantile_low)
-                q_high = float(self.config.robust_ir_quantile_high)
-                if q_low < 0 or q_high > 100 or q_low >= q_high:
-                    raise ValueError("robust2_ir quantiles must satisfy 0 <= low < high <= 100")
-                low_value = np.percentile(finite_values, q_low)
-                high_value = np.percentile(finite_values, q_high)
-                if high_value > low_value:
-                    self.interest_rate[finite_mask] = np.clip(finite_values, low_value, high_value)
 
 
     def do_loans(self):
@@ -523,7 +453,10 @@ class Model:
                 string_result = f"#{i} "
                 if self.lenders[i] ==-1:
                     self.l[i] = np.nan
+                    self.loaned[i] = self.l[i]
                     self.rationing[i] = self.d[i]
+                    total_rationed += self.rationing[i]
+                    num_of_rationed += 1
                     string_result += f"rationed with no lender "
                 elif self.lenders[i] != -1 and self.s[self.lenders[i]] >= self.capacity[i]:
                     # this includes d=c, and rationing will be 0
@@ -532,35 +465,40 @@ class Model:
                     string_result += (f"s>=c ({self.log.format_number(self.s[ self.lenders[i]])}>"
                             f"{self.log.format_number(self.capacity[i])}) ")
                     self.l[i] = self.capacity[i]
+                    self.loaned[i] = self.l[i]
                     self.rationing[i] = self.d[i] -  self.capacity[i]
+                    total_rationed += self.rationing[i]
+                    num_of_rationed += 1
                     # lender:
-                    self.C[self.lenders[i]] -= self.capacity[i]
-                    self.s[self.lenders[i]] -= self.capacity[i]
-                    self.loaned[self.lenders[i]] += self.capacity[i]
+                    self.C[ self.lenders[i]] -= self.capacity[i]
+                    self.s[ self.lenders[i]] -= self.capacity[i]
                 elif self.lenders[i] != -1 and self.s[self.lenders[i]] < self.capacity[i]:
                     # borrower:
                     string_result += (f"s<c ({self.log.format_number(self.s[ self.lenders[i]])}>"
                         f"{self.log.format_number(self.capacity[i])}) ")
                     self.l[i] = self.s[self.lenders[i]]
+                    self.loaned[i] = self.l[i]
                     self.rationing[i] = self.d[i] - self.s[self.lenders[i]]
                     # lender:
-                    self.loaned[self.lenders[i]] += self.s[self.lenders[i]]
                     self.C[self.lenders[i]] = 0
                     self.s[self.lenders[i]] = 0
                 else:
                     self.l[i] = np.nan
+                    self.loaned[i] = self.l[i]
                     self.rationing[i] = self.d[i]
 
                 if self.rationing[i]>0:
+                    total_rationed += self.rationing[i]
+                    num_of_rationed += 1
                     string_result += f" rationed={self.log.format_number(self.rationing[i])},"
                 if self.lenders[i] != -1:
-                    self.log.debug("loans ", f"{string_result}l={self.log.format_number(self.capacity[i])},"
-                                            f" from #{self.lenders[i]} "
+                    self.log.debug("loans ", f"{string_result}l={self.capacity[i]},"
                                             f"lender.C={self.log.format_number(self.C[self.lenders[i]])},"
                                             f"lender.s={self.log.format_number(self.s[self.lenders[i]])}")
                 else:
                     self.log.debug("loans ", f"{string_result}l=nan, lender=no lender")
 
+        return num_of_rationed, total_rationed
 
 
     def check_if_bank_fails(self, bank, reason):
@@ -570,54 +508,25 @@ class Model:
                 # firesaling process with ro=0 (no cost of liquidation). If there is also money to pay also
                 # the interests, it is used as "excess" to pay them:
                 amount_of_loan = self.l[bank]
-                initial_c = self.C[bank]
-                # main loan:
-                pending_of_loan = amount_of_loan 
-                if self.C[bank] > pending_of_loan:
-                    pending_of_loan = 0
-                    self.C[bank] -= amount_of_loan                    
-                else:
-                    pending_of_loan -= self.C[bank]
-                    self.C[bank] = 0
-                if self.config.allow_use_of_L_to_pay_rationing and pending_of_loan > 0:
-                    if pending_of_loan <= self.L[bank]:
-                        pending_of_loan = 0
-                        self.L[bank] -= amount_of_loan
-                        l_used = f"L={self.log.format_number(self.L[bank])} due to rationing paid with L,"
-                    else:
-                        pending_of_loan -= self.L[bank]
-                        self.L[bank] = 0
-                        l_used = "L=0 used to pay rationing but not enough,"
-                else:
-                    l_used = ""
-                paid_loan = amount_of_loan - pending_of_loan
-                if pending_of_loan > 0:
-                    bad_debt = pending_of_loan
+                recovered_with_L = self.L[bank] if self.L[bank] > 0 else 0
+                if amount_of_loan - recovered_with_L > 0:
+                    bad_debt = amount_of_loan - recovered_with_L
+                    interests = 0
+                    paid_loan = recovered_with_L
                 else:
                     bad_debt = 0
-                # interests of the loan:   
-                interests = self.interest_rate[bank] * amount_of_loan
-                if self.C[bank] < interests:
-                    interests_paid = self.C[bank] if self.C[bank] > 0 else 0
-                    self.C[bank] = 0
-                else:
-                    interests_paid = interests
-                    self.C[bank] -= interests
-                
-                    
-                self.log.debug("repayments", f"#{bank} {reason} fails: {l_used}"
-                    f"lender #{self.lenders[bank]} "
-                    f"initial_C={self.log.format_number(initial_c)},"
+                    paid_loan = amount_of_loan
+                    interests = min( self.interest_rate[bank] * amount_of_loan, recovered_with_L-amount_of_loan )
+                self.log.debug("repayments", f"#{bank} uses L to pay {reason} and fails, "
+                    f"#{self.lenders[bank]} "
                     f"bad_debt={self.log.format_number(bad_debt)},"
                     f"interests={self.log.format_number(interests)},"
-                    f"interests_paid={self.log.format_number(interests_paid)},"
                     f"paid={self.log.format_number(paid_loan)},")
                 self.C[self.lenders[bank]] += paid_loan
-                self.C[self.lenders[bank]] += interests_paid
-                self.E[self.lenders[bank]] += interests_paid
+                self.C[self.lenders[bank]] += interests
+                self.E[self.lenders[bank]] += interests
                 self.s[self.lenders[bank]] -= amount_of_loan
                 self.bad_debt[self.lenders[bank]] += abs(bad_debt)
-                self.loaned[self.lenders[bank]] -= abs(bad_debt)
             return 1
         return 0
 
@@ -667,13 +576,13 @@ class Model:
             if self.l[i] > 0:
                 amount_of_loan = self.l[i]
                 self.C[i] -= amount_of_loan
-                self.loaned[self.lenders[i]] -= amount_of_loan
                 if self.C[i] < 0:
                     # we use L to pay back also the loan if not enough:
                     self.E[i] += self.C[i]
                     self.L[i] += self.C[i]
                     self.C[i] = 0
                     self.l[i] = 0
+                    self.loaned[i] = self.l[i]
                     if self.check_if_bank_fails(i, "pay loan"):
                         continue
 
@@ -686,17 +595,12 @@ class Model:
                     self.L[i] += self.C[i]
                     self.E[i] += self.C[i]
                     self.C[i] = 0
+                    self.loaned[i] = self.l[i]
                     if self.check_if_bank_fails(i, "pay interests"):
                         # interests_to_payback is greater than the L we had to use and partially paid:
-                        if self.L[i] < 0:
-                            really_paid = 0
-                        elif self.L[i] < interest_to_payback:
-                            really_paid = interest_to_payback - self.L[i]
-                        else:
-                            really_paid = interest_to_payback
-                        self.C[self.lenders[i]] += really_paid 
-                        self.E[self.lenders[i]] += really_paid 
-                        self.failed[i] = 1
+                        really_paid = interest_to_payback - self.L[i]
+                        self.C[self.lenders[i]] += really_paid
+                        self.E[self.lenders[i]] += really_paid
                         profits_paid += really_paid
                         self.log.debug("repayments", f"#{i} pays partially loan+interests to #{self.lenders[i]} "
                             f"loan={self.log.format_number(amount_of_loan)} and "
@@ -711,16 +615,6 @@ class Model:
                             f"loan={self.log.format_number(amount_of_loan)} and "
                             f"interests={self.log.format_number(interest_to_payback)}")
                 self.check_if_bank_fails(i, "pay interests")
-            else:
-                self.check_if_bank_fails(i, "no loan to pay")
-        
-        for i in range(self.config.N):
-            if self.failed[i] != 1:
-                if self.bad_debt[i] > 0:                    
-                    self.E[i] -= self.bad_debt[i]
-                    self.check_if_bank_fails(i,"bad debt paid with E")
-                else:
-                    self.check_if_bank_fails(i, "after repayments")
         return profits_paid
 
 
@@ -733,11 +627,6 @@ class Model:
         self.C[i] = self.C[i] - self.R[i]
         self.failed[i] = 0
 
-    @staticmethod
-    def _mode_of(values):
-        uniq, counts = np.unique(values, return_counts=True)
-        return uniq[np.argmax(counts)]
-
     def replace_failed_banks(self):
         if not self.config.allow_replacement_of_bankrupted:
             if self.config.N == 0:
@@ -748,64 +637,40 @@ class Model:
                 return
             self.compact_bank_state(alive_mask)
             return
-        if self.config.replace_with_mode:
-            alive = self.failed == 0
-            if np.any(alive):
-                c_mode = self._mode_of(self.C[alive])
-                e_mode = self._mode_of(self.E[alive])
-                l_mode = self._mode_of(self.L[alive])
-                d_mode = self._mode_of(self.D[alive])
-            for i in range(self.config.N):
-                if self.failed[i] == 1:
-                    if np.any(alive):
-                        self.init_bank(i)
-                        self.C[i] = c_mode
-                        self.E[i] = e_mode
-                        self.L[i] = l_mode 
-                        self.D[i] = (self.C[i] + self.L[i] - self.E[i]) / (1 - self.config.r_i0)
-                        self.R[i] = self.config.r_i0 * self.D[i]
-                    else:
-                        self.init_bank(i)
-                    self.failed[i] = 0
-        else:
-            for i in range(self.config.N):
-                if self.failed[i] == 1:
-                    self.init_bank(i)
+
+        for i in range(self.config.N):
+            if self.failed[i] == 1:
+                self.init_bank(i)
 
 
     def init_step(self, t):
         self.t = t
         self.l = np.zeros(self.config.N)
-        self.bad_debt = np.zeros(self.config.N)
-        self.d2 = np.zeros(self.config.N)
-        self.rationing = np.zeros(self.config.N)
-        self.d = np.zeros(self.config.N)
         self.loaned = np.zeros(self.config.N)
+        self.bad_debt = np.zeros(self.config.N)
         self.was_rationed = np.zeros(self.config.N, dtype=bool)
         
     def run(self):
         self.init()
+        self.log.debug_banks()
         for t in range(self.config.T):
             self.init_step(t)
-            self.log.debug_banks()
             self.do_shock1()
             self.stats.compute_d1()
             self.stats.compute_potential_lenders()
-            self.stats.compute_equity_lenders()
-            self.stats.compute_equity_borrowers()
             self.setup_links()
             self.stats.compute_graph()
             self.do_interest_rate()
             self.stats.compute_psi()
             self.stats.compute_assets()
+            self.stats.compute_ir()
             self.stats.compute_capacity()
             self.stats.compute_prob_bankruptcy()
             self.log.debug_banks()
-            self.do_loans()
-            self.stats.compute_ir()
-            self.stats.compute_ir_weighted()
-            self.stats.compute_rationing()
+            num_of_rationed, total_rationed = self.do_loans()
+            self.stats.compute_rationing(num_of_rationed, total_rationed)
             self.stats.compute_num_loans()
+            self.stats.compute_ir_avg()
             self.do_shock2()
             self.stats.compute_d2()
             self.log.debug_banks()
@@ -819,10 +684,13 @@ class Model:
             self.stats.compute_reserves()
             self.stats.compute_bad_debt()
             self.stats.compute_equity()
-            self.stats.compute_leverage()
+            self.log.debug_banks()
             self.log.next()
             if self.config.N <= 2:
                 break
+            #for i in range(self.config.N):
+            #    if self.capacity[i]>0 and (self.banks_d[i]-self.capacity[i])<=0:
+            #        print(f"{i} c={self.capacity[i]} d={self.banks_d[i]}")
         return self.finish()
     
     
@@ -851,29 +719,7 @@ class Model:
         parser.add_argument('--no_replace', action='store_true',
                             default=not self.config.allow_replacement_of_bankrupted,
                             help='No replace banks when they go bankrupted')
-        ir_group = parser.add_mutually_exclusive_group()
-        ir_group.add_argument('--normalize_ir', action='store_true',
-                              default=self.config.normalize_ir,
-                              help='Normalize interest rates to [0,1] in each step')
-        ir_group.add_argument('--sqrt_ir', action='store_true',
-                              default=self.config.sqrt_ir,
-                              help='Apply square root transform to interest rates in each step')
-        ir_group.add_argument('--robust_ir', action='store_true',
-                              default=self.config.robust_ir,
-                              help='Apply robust scaler transform to interest rates in each step')
-        ir_group.add_argument('--robust2_ir', action='store_true',
-                              default=self.config.robust2_ir,
-                              help='Winsorize interest rates at quantile bounds in each step')
-        parser.add_argument('--graph', type=str, default='',
-                            help='Save Erdos-Renyi graphs as PNG and JSON. Comma-separated time steps (e.g. 5,10,15) or "all" for every step')
-        parser.add_argument('--plot_graph', type=str, default=None,
-                            help='Load a saved graph JSON file, plot it (gray edges, no arrows) and save as PNG (inputb.png)')
         args, other_possible_config_args = parser.parse_known_args()
-        if args.plot_graph:
-            if not os.path.isfile(args.plot_graph):
-                parser.error(f"File not found: {args.plot_graph}")
-            lc.LenderChange.plot_saved_graph(args.plot_graph)
-            return
         if args.web:
             from interbank_web import create_app
 
@@ -881,28 +727,13 @@ class Model:
             app.run(host='127.0.0.1', port=args.web_port, debug=False)
             return
         self.config.allow_replacement_of_bankrupted = not args.no_replace
-        self.config.normalize_ir = args.normalize_ir
-        self.config.sqrt_ir = args.sqrt_ir
-        self.config.robust_ir = args.robust_ir
-        self.config.robust2_ir = args.robust2_ir
         self.config.define_values_from_args(other_possible_config_args)
-        selected_ir_transformations = (
-            int(self.config.normalize_ir) + int(self.config.sqrt_ir) + int(self.config.robust_ir) + int(self.config.robust2_ir)
-        )
-        if selected_ir_transformations > 1:
-            parser.error("--normalize_ir, --sqrt_ir, --robust_ir and --robust2_ir are mutually exclusive")
         self.log.define_log(args.log, args.logfile)
         self.stats.define_output_format(args.output_format)
         self.stats.define_output_directory(args.output)
         self.stats.define_output_file(args.save)
         self.stats.define_plot_format(args.plot_format)
-        self.log.interactive = args.log.upper() != 'DEBUG'
-        if args.graph.lower() == 'all':
-            self.save_graph = 'all'
-        elif args.graph:
-            self.save_graph = set(int(x) for x in args.graph.split(','))
-        else:
-            self.save_graph = set()
+        self.log.interactive = True
         self.run()
 
     @staticmethod

@@ -1,0 +1,74 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+
+\begin{document}
+\pagestyle{empty}
+
+\section*{Reinforcement Learning over attachment probability $p$}
+
+We model the control problem as a Markov decision process (MDP)
+\[
+\mathcal{M} = (\mathcal{S}, \mathcal{A}, P, R, \gamma).
+\]
+
+At each time step $t$, the state is
+\[
+s_t = \big(C^{\max}_t, C^{\min}_t, C^{\mathrm{avg}}_t, r^{\max}_t, r^{\min}_t, r^{\mathrm{avg}}_t\big).
+\]
+
+The policy chooses a continuous control action
+\[
+a_t \sim \pi_\theta(a_t \mid s_t), \qquad a_t = p_t \in [0,1].
+\]
+
+The graph of potential lender links is sampled as an Erd\H{o}s-R\'enyi network
+\[
+G_t \sim \mathcal{G}(N, p_t),
+\qquad
+\Pr[(i,j) \in E_t] = p_t.
+\]
+
+The attachment probability directly controls the expected graph density
+\[
+\mathbb{E}[|E_t|] = p_t\,\frac{N(N-1)}{2}.
+\]
+
+This affects the set of possible lenders selected by the model and therefore the loan matching process.
+
+The immediate reward is
+\[
+\mathcal{R}_t = \text{loans}_t - \lambda_b\,\text{bankruptcies}_t,
+\]
+with $\lambda_b > 0$ a penalty weight.
+
+The objective is to maximize the expected discounted return
+\[
+J(\theta) = \mathbb{E}_{\pi_\theta}\left[ \sum_{t=0}^{T-1} \gamma^t \mathcal{R}_t \right].
+\]
+
+PPO optimizes the clipped surrogate objective
+\[
+L^{\mathrm{CLIP}}(\theta) =
+\mathbb{E}_t\left[
+\min\big(
+\rho_t(\theta)\,\hat{A}_t,
+\mathrm{clip}(\rho_t(\theta), 1-\varepsilon, 1+\varepsilon)\,\hat{A}_t
+\big)
+\right],
+\]
+where
+\[
+\rho_t(\theta) = \frac{\pi_\theta(a_t\mid s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)}.
+\]
+
+The advantage estimate is computed with GAE:
+\[
+\delta_t = \mathcal{R}_t + \gamma V(s_{t+1}) - V(s_t),
+\qquad
+\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}.
+\]
+
+\end{document}
